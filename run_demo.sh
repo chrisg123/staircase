@@ -16,5 +16,20 @@ fi
 
 cd build/step-viewer
 python -m http.server 8989 &
+server_pid=$!
+
+cleanup() {
+    echo "Stopping server..."
+    kill $server_pid
+    exit 0
+}
+
+trap cleanup SIGINT
+
+echo "Server started. Press Ctrl+C to stop."
 
 xdg-open "http://localhost:8989"
+
+while true; do
+    sleep 60
+done
