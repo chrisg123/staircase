@@ -1,0 +1,6 @@
+[submodule "external/occt"]
+	path = external/occt
+	url = https://github.com/Open-Cascade-SAS/OCCT
+[submodule "external/freetype"]
+	path = external/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
