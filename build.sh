@@ -83,6 +83,8 @@ if [ ! -f ".skip_initial_dependency_build" ]; then
     make install
     popd
 
+    # Create a flag file to skip initial dependency build in subsequent runs of
+    # build.sh. Remove this file to prompt a rebuild.
     touch .skip_initial_dependency_build
 fi
 
