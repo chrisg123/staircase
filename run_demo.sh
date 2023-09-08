@@ -1,5 +1,15 @@
 #!/bin/bash
 
+build_dir="./build/step-viewer"
+
+# Generate favicon.ico to avoid 404 File not found errors in browser
+favicon="${build_dir}/favicon.ico"
+printf '\x00\x00\x01\x00\x01\x00' > "${favicon}"
+printf '\x10\x10\x01\x00\x20\x00\x00\x00\x00\x04\x00\x00\x16\x00\x00\x00' >> "${favicon}"
+for i in $(seq 1 256); do
+  printf '\xFF\xFF\xFF\xFF' >> "${favicon}"
+done
+
 html_file="./build/step-viewer/index.html"
 if [ ! -f "$html_file" ]; then
     echo '<!DOCTYPE html>
