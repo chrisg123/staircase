@@ -62,27 +62,22 @@ if [ ! -f ".skip_initial_dependency_build" ]; then
         -DBUILD_MODULE_DataExchange=ON
     make -j$num_cores all
 
-
     # Create symlink to fix bug in occt's `make install`.
     target="${script_dir}/build/occt/lin32/clang/bin/ExpToCasExe.js-7.8.0.wasm"
     link="${script_dir}/build/occt/lin32/clang/bin/ExpToCasExe.wasm"
 
-    # Check if the link exists
     if [ -L "$link" ]; then
-        # Check if the link is broken
         if [ ! -e "$link" ]; then
             echo "Broken symlink detected. Removing it."
             rm "$link"
         elif [ "$(readlink "$link")" = "$target" ]; then
             echo "Symlink already points to the correct target. Nothing to do."
-            exit 0
         else
             echo "Symlink points to a different target. Updating it."
             rm "$link"
         fi
     fi
 
-    # Create the symlink
     ln -s "$target" "$link"
 
     make install
