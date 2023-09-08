@@ -1,5 +1,7 @@
 # STEP File Viewer
 
+> :warning: **Work in Progress**: This project is currently under development.
+
 ## Description
 
 This is a STEP file viewer that enables you to view 3D models in the STEP file
