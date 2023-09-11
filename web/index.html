@@ -1,11 +1,54 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>StepViewer</title>
-  </head>
-  <body>
-    <span id="version"></span>
-    <script async type="text/javascript" src="StepViewer.js"></script>
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>STEP Viewer</title>
+    </head>
+    <body>
+        <div>
+            <span id="version"></span>
+        </div>
+        <canvas
+            id="stepViewerCanvas"
+            width="800"
+            height="600"
+            style="border: 1px solid #000"
+        ></canvas>
+
+        <script async type="text/javascript" src="StepViewer.js"></script>
+
+        <script type="text/javascript">
+            function drawSomething() {
+                // Draw blue and green checkerboard.
+                var canvas = document.getElementById("stepViewerCanvas");
+                var ctx = canvas.getContext("2d")
+                rows = 12;
+                cols = 16;
+                squareSize = 50;
+
+                for (var i = 0; i < cols; i++) {
+                    for (var j = 0; j < rows; j++) {
+                        var color;
+                        if ((i + j) % 2 === 0) {
+                            color = "#00FF00";
+                        } else {
+                            color = "#0000FF";
+                        }
+                        ctx.fillStyle = color;
+                        ctx.fillRect(
+                            i * squareSize,
+                            j * squareSize,
+                            squareSize,
+                            squareSize,
+                        );
+                    }
+                }
+                var ctx = canvas.getContext("2d");
+            }
+
+            window.onload = function () {
+                drawSomething();
+            };
+        </script>
+    </body>
 </html>
