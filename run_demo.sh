@@ -21,9 +21,6 @@ if [ ! -f "$favicon" ]; then
     done
 fi
 
-html_file="${script_dir}/web/index.html"
-cp "${html_file}" "${build_dir}/index.html"
-
 cd build/step-viewer
 python -m http.server $port &
 server_pid=$!

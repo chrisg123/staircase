@@ -92,3 +92,7 @@ pushd build/step-viewer
 cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
 make -j$num_cores all
 popd
+
+set -x
+html_file="${script_dir}/web/index.html"
+cp "${html_file}" "${build_dir}/step-viewer/index.html"
