@@ -1,4 +1,5 @@
 #!/bin/bash
+set -xe
 
 port=8989
 
@@ -6,8 +7,9 @@ if lsof -Pi :$port -s "TCP:LISTEN" -t >/dev/null; then
     echo "Server is already running. Access it here: http://localhost:$port"
     exit 0
 fi
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-build_dir="./build/step-viewer"
+build_dir="${script_dir}/build/step-viewer"
 
 # Generate favicon.ico to avoid 404 File not found errors in browser
 favicon="${build_dir}/favicon.ico"
@@ -19,19 +21,8 @@ if [ ! -f "$favicon" ]; then
     done
 fi
 
-html_file="./build/step-viewer/index.html"
-if [ ! -f "$html_file" ]; then
-    echo '<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>StepViewer</title>
-    </head>
-    <body>
-        <script async type="text/javascript" src="StepViewer.js"></script>
-    </body>
-    </html>' >"$html_file"
-fi
+html_file="${script_dir}/web/index.html"
+cp "${html_file}" "${build_dir}/index.html"
 
 cd build/step-viewer
 python -m http.server $port &
