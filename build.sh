@@ -88,6 +88,32 @@ if [ ! -f ".skip_initial_dependency_build" ]; then
     touch .skip_initial_dependency_build
 fi
 
+# Check for sample STEP files and download if not present
+samples_dir="${script_dir}/samples"
+target_definition="NIST_MBE_PMI_FTC_Definitions"
+samples_zip="${samples_dir}/${target_definition}.zip"
+target_step_file="${samples_dir}/${target_definition}/nist_ftc_09_asme1_rd.stp"
+nist_url_prefix="https://www.nist.gov/system/files/documents/noindex/2022/07/19"
+
+if [ ! -d "${samples_dir}" ]; then
+    mkdir -p "${samples_dir}"
+fi
+
+if [ ! -f "${target_step_file}" ]; then
+    if [ ! -f "${samples_zip}" ]; then
+        echo "Downloading sample STEP files..."
+        if curl -o "${samples_zip}" "${nist_url_prefix}/${target_definition}.zip"; then
+            if unzip "${samples_zip}" -d "${samples_dir}"; then
+                rm -f "${samples_zip}"
+            fi
+        fi
+    fi
+fi
+
+if [ ! -f "${target_step_file}" ]; then
+    echo "Sample STEP files missing!"
+fi
+
 pushd build/step-viewer
 cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
 make -j$num_cores all
