@@ -119,6 +119,17 @@ cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
 make -j$num_cores all
 popd
 
-set -x
+echo "Generating dummy favicon.ico"
+# Generate favicon.ico to avoid 404 File not found errors in browser
+favicon="${build_dir}/favicon.ico"
+if [ ! -f "$favicon" ]; then
+    printf '\x00\x00\x01\x00\x01\x00' >"${favicon}"
+    printf '\x10\x10\x01\x00\x20\x00\x00\x00\x00\x04\x00\x00\x16\x00\x00\x00' >>"${favicon}"
+    for _ in $(seq 1 256); do
+        printf '\xFF\xFF\xFF\xFF' >>"${favicon}"
+    done
+fi
+
 html_file="${script_dir}/web/index.html"
+set -x
 cp "${html_file}" "${build_dir}/step-viewer/index.html"

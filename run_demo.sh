@@ -11,16 +11,6 @@ script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
 build_dir="${script_dir}/build/step-viewer"
 
-# Generate favicon.ico to avoid 404 File not found errors in browser
-favicon="${build_dir}/favicon.ico"
-if [ ! -f "$favicon" ]; then
-    printf '\x00\x00\x01\x00\x01\x00' >"${favicon}"
-    printf '\x10\x10\x01\x00\x20\x00\x00\x00\x00\x04\x00\x00\x16\x00\x00\x00' >>"${favicon}"
-    for i in $(seq 1 256); do
-        printf '\xFF\xFF\xFF\xFF' >>"${favicon}"
-    done
-fi
-
 cd build/step-viewer
 python -m http.server $port &
 server_pid=$!
