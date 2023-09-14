@@ -5,12 +5,12 @@ set -e
 verbose=0
 
 for arg in "$@"; do
-    if [ "$arg" == "--verbose" ] || [ "$arg" == "-v" ]; then
+    if [ "${arg}" == "--verbose" ] || [ "${arg}" == "-v" ]; then
         verbose=1
     fi
 done
 
-if [ "$verbose" -eq 1 ]; then
+if [ "${verbose}" -eq 1 ]; then
     set -x
 fi
 
@@ -36,7 +36,7 @@ num_cores=$(nproc)
 if [ ! -f ".skip_initial_dependency_build" ]; then
     pushd build/freetype
     cmake ../../external/freetype -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
-    make -j$num_cores all
+    make -j"${num_cores}" all
     make install
     popd
 
@@ -60,25 +60,25 @@ if [ ! -f ".skip_initial_dependency_build" ]; then
         -DBUILD_MODULE_ModelingData=ON \
         -DBUILD_MODULE_ModelingAlgorithms=ON \
         -DBUILD_MODULE_DataExchange=ON
-    make -j$num_cores all
+    make -j"${num_cores}" all
 
     # Create symlink to fix bug in occt's `make install`.
     target="${script_dir}/build/occt/lin32/clang/bin/ExpToCasExe.js-7.8.0.wasm"
     link="${script_dir}/build/occt/lin32/clang/bin/ExpToCasExe.wasm"
 
-    if [ -L "$link" ]; then
-        if [ ! -e "$link" ]; then
+    if [ -L "${link}" ]; then
+        if [ ! -e "${link}" ]; then
             echo "Broken symlink detected. Removing it."
-            rm "$link"
-        elif [ "$(readlink "$link")" = "$target" ]; then
+            rm "${link}"
+        elif [ "$(readlink "${link}")" = "${target}" ]; then
             echo "Symlink already points to the correct target. Nothing to do."
         else
             echo "Symlink points to a different target. Updating it."
-            rm "$link"
+            rm "${link}"
         fi
     fi
 
-    ln -s "$target" "$link"
+    ln -s "${target}" "${link}"
 
     make install
     popd
@@ -116,7 +116,7 @@ fi
 
 pushd build/step-viewer
 cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
-make -j$num_cores all
+make -j"${num_cores}" all
 popd
 
 echo "Generating dummy favicon.ico"
