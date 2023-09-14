@@ -3,14 +3,13 @@
 #include <opencascade/Standard_Version.hxx>
 
 int main() {
-  std::cout << "OCCT Version: >> " << OCC_VERSION_COMPLETE << std::endl;
+  std::string occt_version_str =
+      "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
 
-  EM_ASM(
-      {
-        document.getElementById('version').innerHTML =
-            'OCCT Version: ' + UTF8ToString($0);
-      },
-      OCC_VERSION_COMPLETE);
+  std::cout << occt_version_str << std::endl;
+
+  EM_ASM({ document.getElementById('version').innerHTML = UTF8ToString($0); },
+         occt_version_str.c_str());
 
   return 0;
 }
