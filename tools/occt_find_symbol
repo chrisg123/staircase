@@ -1,6 +1,10 @@
 #!/bin/bash
 
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+root_dir="../build/occt"
+lib_dirs=$(find "${root_dir}" -type f -name '*.a' -exec dirname {} \; | uniq | xargs readlink -f)
 
-python "${script_dir}"/find_symbol.py "$1" "${script_dir}"/../build/occt/lin32/clang/lib
+for lib_dir in ${lib_dirs}; do
+  python "${script_dir}"/find_symbol.py "$1" "${lib_dir}"
+done
 
