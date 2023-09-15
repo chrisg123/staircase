@@ -40,8 +40,14 @@
             function updateCanvasSize() {
                 const canvas = document.getElementById("stepViewerCanvas");
                 var computedStyle = window.getComputedStyle(canvas);
-                var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10)
-                var cssHeight = parseInt(computedStyle.getPropertyValue('height'), 10)
+                var cssWidth = parseInt(
+                    computedStyle.getPropertyValue("width"),
+                    10,
+                );
+                var cssHeight = parseInt(
+                    computedStyle.getPropertyValue("height"),
+                    10,
+                );
                 var devicePixelRatio = window.devicePixelRatio || 1;
                 canvas.width = cssWidth * devicePixelRatio;
                 canvas.height = cssHeight * devicePixelRatio;
@@ -50,7 +56,7 @@
             function drawSomething() {
                 // Draw blue and green checkerboard.
                 var canvas = document.getElementById("stepViewerCanvas");
-                updateCanvasSize()
+                updateCanvasSize();
                 var ctx = canvas.getContext("2d");
                 rows = 12;
                 cols = 16;
