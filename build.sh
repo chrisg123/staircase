@@ -110,9 +110,35 @@ if [ ! -f "${target_step_file}" ]; then
     fi
 fi
 
+resource_header="${script_dir}/src/EmbeddedStepFile.h"
+
+step_content="nullptr"
+
 if [ ! -f "${target_step_file}" ]; then
     echo "Sample STEP files missing!"
+else
+    step_content=$(sed 's/"/\\"/g' "${target_step_file}")
 fi
+
+# Generate the header file
+echo "// Auto-generated file, do not edit" >"${resource_header}"
+{
+    echo "#ifndef EMBEDDED_STEP_FILE_H"
+    echo "#define EMBEDDED_STEP_FILE_H"
+    echo "#include <string>"
+} >>"${resource_header}"
+
+if [ "${step_content}" = "nullptr" ]; then
+    echo "const std::string embeddedStepFile = nullptr;" >>"${resource_header}"
+else
+    {
+        echo "const std::string embeddedStepFile = R\"("
+        cat "${target_step_file}"
+        echo ")\";"
+    } >>"${resource_header}"
+fi
+
+echo "#endif // EMBEDDED_STEP_FILE_H" >> "${resource_header}"
 
 pushd build/step-viewer
 cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
