@@ -4,10 +4,18 @@
         <meta charset="UTF-8" />
         <title>STEP Viewer</title>
         <style>
+            h1 {
+                font-size: 1.2em;
+            }
             #stepViewerCanvas {
                 width: 800px;
                 height: 600px;
                 border: 1px solid #000;
+            }
+            #stepText {
+                width: 800px;
+                height: 300px;
+                overflow-y: scroll;
             }
         </style>
     </head>
@@ -15,11 +23,16 @@
         <div>
             <span id="version"></span>
         </div>
+        <h1>Step File Viewer</h1>
         <canvas id="stepViewerCanvas"></canvas>
         <div>
             <input type="file" id="stepFileInput" accept=".step" />
             <button id="loadStepFile">Load STEP File</button>
         </div>
+
+        <h1>Step File Content</h1>
+
+        <textarea id="stepText"></textarea>
 
         <script async type="text/javascript" src="StepViewer.js"></script>
 

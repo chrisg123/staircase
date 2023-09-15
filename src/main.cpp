@@ -1,6 +1,7 @@
 #include <emscripten.h>
 #include <iostream>
 #include <opencascade/Standard_Version.hxx>
+#include "EmbeddedStepFile.h"
 
 int main() {
   std::string occt_version_str =
@@ -10,6 +11,9 @@ int main() {
 
   EM_ASM({ document.getElementById('version').innerHTML = UTF8ToString($0); },
          occt_version_str.c_str());
+
+  EM_ASM({ document.getElementById('stepText').innerHTML = UTF8ToString($0); },
+         embeddedStepFile.c_str());
 
   return 0;
 }
