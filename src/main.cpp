@@ -5,6 +5,33 @@
 #include <opencascade/Standard_Version.hxx>
 #include <opencascade/TDocStd_Document.hxx>
 #include <opencascade/XCAFApp_Application.hxx>
+#include <opencascade/TDataStd_Name.hxx>
+#include <opencascade/TDF_ChildIterator.hxx>
+
+/**
+ * Recursively prints the hierarchy of labels from a TDF_Label tree.
+ *
+ * @param label The root label to start the traversal from.
+ * @param level Indentation level for better readability (default is 0).
+ */
+void printLabels(const TDF_Label& label, int level = 0) {
+  for (int i = 0; i < level; ++i) {
+    std::cout << "  ";
+  }
+
+  Handle(TDataStd_Name) name;
+  if (label.FindAttribute(TDataStd_Name::GetID(), name)) {
+    TCollection_ExtendedString nameStr = name->Get();
+    std::cout << "Label: " << nameStr;
+  } else {
+    std::cout << "Unnamed Label";
+  }
+  std::cout << std::endl;
+
+  for (TDF_ChildIterator it(label); it.More(); it.Next()) {
+    printLabels(it.Value(), level + 1);
+  }
+}
 
 int main() {
   std::string occt_version_str =
@@ -37,6 +64,9 @@ int main() {
     }
 
     std::cout << "Embedded STEP Data successfully read." << std::endl;
+    std::cout << "Document structure:" << std::endl;
+    printLabels(aDoc->Main());
+
   } else {
     std::cerr << "Error reading STEP file." << std::endl;
     return 1;
