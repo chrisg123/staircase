@@ -33,6 +33,8 @@ mkdir -p "${build_dir}/step-viewer"
 
 num_cores=$(nproc)
 
+git submodule update --init --recursive
+
 if [ ! -f ".skip_initial_dependency_build" ]; then
     pushd build/freetype
     cmake ../../external/freetype -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
