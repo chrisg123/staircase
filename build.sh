@@ -134,7 +134,7 @@ if [ "${step_content}" = "nullptr" ]; then
     echo "const std::string embeddedStepFile = nullptr;" >>"${resource_header}"
 else
     {
-        echo "const std::string embeddedStepFile = R\"("
+        printf "const std::string embeddedStepFile = R\"("
         cat "${target_step_file}"
         echo ")\";"
     } >>"${resource_header}"
