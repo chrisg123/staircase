@@ -16,6 +16,24 @@ browser.
 - Pan, zoom, and rotate 3D models
 - High-performance rendering
 
+## Building
+
+#### For Linux
+To build the project, simply run the following command:
+
+```bash
+make
+```
+
+Once the build is successful, you can run the demo with the following command:
+
+```bash
+make demo
+```
+
+This will start the demo, and you should be able to view it in your web browser.
+
+
 ## License
 
 This project is licensed under the terms of the GNU Lesser General Public
