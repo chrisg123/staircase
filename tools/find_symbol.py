@@ -13,7 +13,8 @@ def main():
     found_libs = find_symbol_in_libs(args.symbol, args.lib_dir)
 
     if found_libs:
-        print(f"Symbol {args.symbol} found in: {', '.join(found_libs)}")
+        print(f"Symbol {args.symbol} found in the following libraries:")
+        print('\n'.join(found_libs))
     else:
         print(f"Symbol {args.symbol} not found in any library in {args.lib_dir}.")
 
