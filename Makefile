@@ -2,10 +2,13 @@ all:
 	./build.sh
 
 clean:
+	rm -rf build/staircase
+
+clean-all:
 	rm -rf build
 	rm -f .skip_initial_dependency_build
 
-cleanall: clean
+reset: clean-all
 	rm -rf samples
 	rm -f src/EmbeddedStepFile.h
 	for dir in external/*; do \
