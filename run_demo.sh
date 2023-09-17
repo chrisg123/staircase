@@ -9,9 +9,9 @@ if lsof -Pi :$port -s "TCP:LISTEN" -t >/dev/null; then
 fi
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-build_dir="${script_dir}/build/step-viewer"
+build_dir="${script_dir}/build/staircase"
 
-cd build/step-viewer
+cd build/staircase
 python -m http.server $port &
 server_pid=$!
 

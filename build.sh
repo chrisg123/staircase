@@ -142,7 +142,7 @@ fi
 
 echo "#endif // EMBEDDED_STEP_FILE_H" >> "${resource_header}"
 
-pushd build/step-viewer
+pushd build/staircase
 cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
 make -j"${num_cores}" all
 popd
@@ -160,4 +160,4 @@ fi
 
 html_file="${script_dir}/web/index.html"
 set -x
-cp "${html_file}" "${build_dir}/step-viewer/index.html"
+cp "${html_file}" "${build_dir}/staircase/index.html"
