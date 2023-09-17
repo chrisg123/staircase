@@ -29,7 +29,7 @@ toolchain_file="${EMSDK}/${cmake_modules}/Platform/Emscripten.cmake"
 
 mkdir -p "${build_dir}/freetype"
 mkdir -p "${build_dir}/occt"
-mkdir -p "${build_dir}/step-viewer"
+mkdir -p "${build_dir}/staircase"
 
 num_cores=$(nproc)
 
