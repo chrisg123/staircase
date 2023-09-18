@@ -4,10 +4,10 @@
 #include <iostream>
 #include <opencascade/STEPCAFControl_Reader.hxx>
 #include <opencascade/Standard_Version.hxx>
+#include <opencascade/TDF_ChildIterator.hxx>
+#include <opencascade/TDataStd_Name.hxx>
 #include <opencascade/TDocStd_Document.hxx>
 #include <opencascade/XCAFApp_Application.hxx>
-#include <opencascade/TDataStd_Name.hxx>
-#include <opencascade/TDF_ChildIterator.hxx>
 
 class Timer {
 public:
@@ -34,7 +34,7 @@ private:
  * @param label The root label to start the traversal from.
  * @param level Indentation level for better readability (default is 0).
  */
-void printLabels(const TDF_Label& label, int level = 0) {
+void printLabels(TDF_Label const &label, int level = 0) {
   for (int i = 0; i < level; ++i) {
     std::cout << "  ";
   }
