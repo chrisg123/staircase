@@ -1,4 +1,5 @@
 #include "EmbeddedStepFile.h"
+#include <chrono>
 #include <emscripten.h>
 #include <iostream>
 #include <opencascade/STEPCAFControl_Reader.hxx>
@@ -7,6 +8,25 @@
 #include <opencascade/XCAFApp_Application.hxx>
 #include <opencascade/TDataStd_Name.hxx>
 #include <opencascade/TDF_ChildIterator.hxx>
+
+class Timer {
+public:
+  Timer(std::string const &timerName)
+      : name(timerName), start(std::chrono::high_resolution_clock::now()) {}
+
+  ~Timer() {
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+            .count();
+    double seconds = static_cast<double>(duration) / 1e6;
+    std::cout << "[TIMER] " << seconds << "s:" << name << std::endl;
+  }
+
+private:
+  std::string name;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start;
+};
 
 /**
  * Recursively prints the hierarchy of labels from a TDF_Label tree.
