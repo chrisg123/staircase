@@ -36,8 +36,11 @@ num_cores=$(nproc)
 git submodule update --init --recursive
 
 if [ ! -f ".skip_initial_dependency_build" ]; then
+
     pushd build/freetype
-    cmake ../../external/freetype -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
+    cmake ../../external/freetype -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}" \
+        -DCMAKE_CXX_FLAGS="-s USE_PTHREADS=1" \
+        -DCMAKE_C_FLAGS="-s USE_PTHREADS=1"
     make -j"${num_cores}" all
     make install
     popd
@@ -45,6 +48,8 @@ if [ ! -f ".skip_initial_dependency_build" ]; then
     pushd build/occt
     cmake ../../external/occt \
         -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}" \
+        -DCMAKE_CXX_FLAGS="-s USE_PTHREADS=1" \
+        -DCMAKE_C_FLAGS="-s USE_PTHREADS=1" \
         -DBUILD_LIBRARY_TYPE="Static" \
         -D3RDPARTY_FREETYPE_DIR="${EMSDK}/upstream/emscripten/cache/sysroot/include/freetype2" \
         -D3RDPARTY_FREETYPE_INCLUDE_DIR_ft2build="${EMSDK}/upstream/emscripten/cache/sysroot/include/freetype2" \

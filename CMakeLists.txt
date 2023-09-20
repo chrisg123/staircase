@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 
 project(StepViewer)
 
+set(CMAKE_CXX_STANDARD 11)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -s USE_PTHREADS=1")
+
 set(EMSDK_SYSROOT $ENV{EMSDK}/upstream/emscripten/cache/sysroot)
 
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -42,3 +46,5 @@ target_link_libraries(
   TKSTEPAttr
   TKXDESTEP
 )
+
+set_target_properties(StepViewer PROPERTIES LINK_FLAGS "-s PTHREAD_POOL_SIZE=4")
