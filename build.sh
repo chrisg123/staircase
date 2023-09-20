@@ -149,7 +149,7 @@ popd
 
 echo "Generating dummy favicon.ico"
 # Generate favicon.ico to avoid 404 File not found errors in browser
-favicon="${build_dir}/favicon.ico"
+favicon="${build_dir}/staircase/favicon.ico"
 if [ ! -f "$favicon" ]; then
     printf '\x00\x00\x01\x00\x01\x00' >"${favicon}"
     printf '\x10\x10\x01\x00\x20\x00\x00\x00\x00\x04\x00\x00\x16\x00\x00\x00' >>"${favicon}"
