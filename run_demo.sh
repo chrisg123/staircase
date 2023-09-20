@@ -12,7 +12,7 @@ script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 build_dir="${script_dir}/build/staircase"
 
 cd build/staircase
-python -m http.server $port &
+python "${script_dir}/tools/http_server_with_headers.py" &
 server_pid=$!
 
 cleanup() {
