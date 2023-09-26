@@ -101,6 +101,12 @@ void main_loop(void *arg) {
 }
 
 int main() {
+
+  if (!arePthreadsEnabled()) {
+    std::cerr << "Pthreads are required." << std::endl;
+    return 1;
+  }
+
   std::string occt_version_str =
       "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
 
@@ -122,10 +128,6 @@ int main() {
 
   std::istringstream fromStream(embeddedStepFile);
 
-  if (!arePthreadsEnabled()) {
-    std::cerr << "Pthreads are required." << std::endl;
-    return 1;
-  }
 
   std::cout << "Pthreads enabled" << std::endl;
   std::thread([&]() {
