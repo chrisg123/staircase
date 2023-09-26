@@ -77,8 +77,28 @@ bool arePthreadsEnabled();
 void printLabels(TDF_Label const &label, int level = 0);
 std::optional<DocHandle> readInto(std::function<DocHandle()> aNewDoc,
                    std::istream &fromStream);
+void drawCheckerBoard();
+void readDemoSTEPFile();
 
-void main_loop() {}
+void main_loop(void *arg) {
+  AppContext *context = static_cast<AppContext*>(arg);
+  auto localQueue = context->drainMessageQueue();
+
+  while (!localQueue.empty()) {
+    auto message = localQueue.front();
+    localQueue.pop();
+
+    switch (message.type) {
+    case MessageType::DrawCheckerboard:
+      drawCheckerBoard();
+      break;
+
+    case MessageType::ReadStepFileDone:
+      readDemoSTEPFile();
+      break;
+    }
+  }
+}
 
 int main() {
   std::string occt_version_str =
@@ -91,11 +111,12 @@ int main() {
   EM_ASM({ document.getElementById('stepText').innerHTML = UTF8ToString($0); },
          embeddedStepFile.c_str());
 
-  Handle(XCAFApp_Application) anApp = XCAFApp_Application::GetApplication();
+  AppContext context;
+  context.pushMessage({MessageType::DrawCheckerboard, std::any{}});
 
   auto aNewDoc = [&]() -> DocHandle {
     Handle(TDocStd_Document) aDoc;
-    anApp->NewDocument("MDTV-XCAF", aDoc);
+    context.getApp()->NewDocument("MDTV-XCAF", aDoc);
     return aDoc;
   };
 
@@ -118,7 +139,7 @@ int main() {
     emscripten_cancel_main_loop();
   }).detach();
 
-  emscripten_set_main_loop(main_loop, 0, 1);
+  emscripten_set_main_loop_arg(main_loop, &context, 0, 1);
 
   return 0;
 }
@@ -178,4 +199,12 @@ void printLabels(TDF_Label const &label, int level) {
   for (TDF_ChildIterator it(label); it.More(); it.Next()) {
     printLabels(it.Value(), level + 1);
   }
+}
+
+void drawCheckerBoard() {
+  std::cout << "TODO: DrawCheckerboard" << std::endl;
+}
+
+void readDemoSTEPFile() {
+  std::cout << "TODO: readDemoSTEPFile" << std::endl;
 }
