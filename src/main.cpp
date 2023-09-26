@@ -16,9 +16,11 @@
 #include <algorithm>
 
 using DocHandle = Handle(TDocStd_Document);
+using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
 enum class MessageType {
   DrawCheckerboard,
+  ReadDemoStepFile,
   ReadStepFileDone
 };
 
@@ -78,7 +80,8 @@ void printLabels(TDF_Label const &label, int level = 0);
 std::optional<DocHandle> readInto(std::function<DocHandle()> aNewDoc,
                    std::istream &fromStream);
 void drawCheckerBoard();
-void readDemoSTEPFile();
+void readDemoSTEPFile(AppContext &context, CallbackType callback);
+void readStepFileDone();
 
 void main_loop(void *arg) {
   AppContext *context = static_cast<AppContext*>(arg);
@@ -90,11 +93,24 @@ void main_loop(void *arg) {
 
     switch (message.type) {
     case MessageType::DrawCheckerboard:
+      std::cout << "[REC MSG] MessageType::DrawCheckerboard" << std::endl;
       drawCheckerBoard();
       break;
+    case MessageType::ReadDemoStepFile:
+      std::cout << "[REC MSG] MessageType::ReadDemoStepFile" << std::endl;
+      std::thread([&, context]() {
+        readDemoSTEPFile(*context, [&](std::optional<DocHandle> docOpt) {
+          Message msg;
+          msg.type = MessageType::ReadStepFileDone;
+          msg.data = docOpt.value();
+          context->pushMessage(msg);
+        });
 
+      }).detach();
+      break;
     case MessageType::ReadStepFileDone:
-      readDemoSTEPFile();
+      std::cout << "[REC MSG] MessageType::ReadStepFileDone" << std::endl;
+      readStepFileDone();
       break;
     }
   }
@@ -106,6 +122,7 @@ int main() {
     std::cerr << "Pthreads are required." << std::endl;
     return 1;
   }
+  std::cout << "Pthreads enabled" << std::endl;
 
   std::string occt_version_str =
       "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
@@ -119,27 +136,7 @@ int main() {
 
   AppContext context;
   context.pushMessage({MessageType::DrawCheckerboard, std::any{}});
-
-  auto aNewDoc = [&]() -> DocHandle {
-    Handle(TDocStd_Document) aDoc;
-    context.getApp()->NewDocument("MDTV-XCAF", aDoc);
-    return aDoc;
-  };
-
-  std::istringstream fromStream(embeddedStepFile);
-
-
-  std::cout << "Pthreads enabled" << std::endl;
-  std::thread([&]() {
-    std::optional<DocHandle> docOpt;
-    {
-      Timer timer = Timer("readInto(aNewDoc, fromStream)");
-      docOpt = readInto(aNewDoc, fromStream);
-    }
-    if (docOpt.has_value()) { printLabels(docOpt.value()->Main()); }
-
-    emscripten_cancel_main_loop();
-  }).detach();
+  context.pushMessage({MessageType::ReadDemoStepFile, std::any{}});
 
   emscripten_set_main_loop_arg(main_loop, &context, 0, 1);
 
@@ -207,6 +204,26 @@ void drawCheckerBoard() {
   std::cout << "TODO: DrawCheckerboard" << std::endl;
 }
 
-void readDemoSTEPFile() {
-  std::cout << "TODO: readDemoSTEPFile" << std::endl;
+void readDemoSTEPFile(AppContext &context, CallbackType callback) {
+
+  auto aNewDoc = [&]() -> DocHandle {
+    Handle(TDocStd_Document) aDoc;
+    context.getApp()->NewDocument("MDTV-XCAF", aDoc);
+    return aDoc;
+  };
+
+  std::istringstream fromStream(embeddedStepFile);
+
+  std::optional<DocHandle> docOpt;
+  {
+    Timer timer = Timer("readInto(aNewDoc, fromStream)");
+    docOpt = readInto(aNewDoc, fromStream);
+  }
+  if (docOpt.has_value()) { printLabels(docOpt.value()->Main()); }
+
+  callback(docOpt);
+}
+
+void readStepFileDone() {
+  std::cout << "TODO: readStepFileDone" << std::endl;
 }
