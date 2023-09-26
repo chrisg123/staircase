@@ -60,25 +60,24 @@ int main() {
 
   std::istringstream fromStream(embeddedStepFile);
 
-  if (arePthreadsEnabled()) {
-    std::cout << "Pthreads enabled" << std::endl;
-    std::thread([&]() {
-      std::optional<DocHandle> docOpt;
-      {
-        Timer timer = Timer("readInto(aNewDoc, fromStream)");
-        docOpt = readInto(aNewDoc, fromStream);
-      }
-      if (docOpt.has_value()) { printLabels(docOpt.value()->Main()); }
-
-      emscripten_cancel_main_loop();
-    }).detach();
-
-    emscripten_set_main_loop(main_loop, 0, 1);
-
-  } else {
+  if (!arePthreadsEnabled()) {
     std::cerr << "Pthreads are required." << std::endl;
     return 1;
   }
+
+  std::cout << "Pthreads enabled" << std::endl;
+  std::thread([&]() {
+    std::optional<DocHandle> docOpt;
+    {
+      Timer timer = Timer("readInto(aNewDoc, fromStream)");
+      docOpt = readInto(aNewDoc, fromStream);
+    }
+    if (docOpt.has_value()) { printLabels(docOpt.value()->Main()); }
+
+    emscripten_cancel_main_loop();
+  }).detach();
+
+  emscripten_set_main_loop(main_loop, 0, 1);
 
   return 0;
 }
