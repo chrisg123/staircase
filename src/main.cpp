@@ -76,8 +76,8 @@ int main() {
     emscripten_set_main_loop(main_loop, 0, 1);
 
   } else {
-    std::cout << "Pthreads not enabled. Browser may freeze." << std::endl;
-    readInto(aNewDoc, fromStream);
+    std::cerr << "Pthreads are required." << std::endl;
+    return 1;
   }
 
   return 0;
