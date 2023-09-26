@@ -10,9 +10,50 @@
 #include <opencascade/XCAFApp_Application.hxx>
 #include <optional>
 #include <thread>
+#include <queue>
+#include <mutex>
+#include <any>
+#include <algorithm>
 
 using DocHandle = Handle(TDocStd_Document);
 
+enum class MessageType {
+  DrawCheckerboard,
+  ReadStepFileDone
+};
+
+struct Message {
+  MessageType type;
+  std::any data;
+};
+
+class AppContext {
+public:
+  AppContext() {
+    app = XCAFApp_Application::GetApplication();
+  }
+
+  Handle(XCAFApp_Application) getApp() const {
+    return app;
+  }
+
+  void pushMessage(const Message &msg) {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    messageQueue.push(msg);
+  }
+
+  std::queue<Message> drainMessageQueue() {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    std::queue<Message> localQueue;
+    std::swap(localQueue, messageQueue);
+    return localQueue;
+  }
+
+private:
+  Handle(XCAFApp_Application) app;
+  std::queue<Message> messageQueue;
+  std::mutex queueMutex;
+};
 class Timer {
 public:
   Timer(std::string const &timerName)
