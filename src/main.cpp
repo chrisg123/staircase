@@ -119,6 +119,7 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
                 GLfloat r, GLfloat g, GLfloat b, float aspectRatio);
 void draw(AppContext &context);
 void drawCheckerBoard(AppContext &context);
+void clearCanvas(RGB color);
 
 void main_loop(void *arg) {
   AppContext *context = static_cast<AppContext *>(arg);
