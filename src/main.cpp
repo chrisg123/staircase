@@ -21,28 +21,18 @@ using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
 namespace MessageType {
-  enum Type {
-    SetVersionString,
-    DrawCheckerboard,
-    ReadStepFile,
-    RenderStepFile
-  };
+enum Type { SetVersionString, DrawCheckerboard, ReadStepFile, RenderStepFile };
 
-  static const char* toString(Type type) {
-    switch (type) {
-      case SetVersionString:
-        return "SetVersionString";
-      case DrawCheckerboard:
-        return "DrawCheckerboard";
-      case ReadStepFile:
-        return "ReadStepFile";
-      case RenderStepFile:
-        return "RenderStepFile";
-      default:
-        return "Unknown";
-    }
+static char const *toString(Type type) {
+  switch (type) {
+  case SetVersionString: return "SetVersionString";
+  case DrawCheckerboard: return "DrawCheckerboard";
+  case ReadStepFile: return "ReadStepFile";
+  case RenderStepFile: return "RenderStepFile";
+  default: return "Unknown";
   }
 }
+} // namespace MessageType
 
 struct Message {
   MessageType::Type type;
