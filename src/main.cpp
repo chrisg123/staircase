@@ -34,6 +34,22 @@ static char const *toString(Type type) {
 }
 } // namespace MessageType
 
+struct RGB {
+  float r, g, b;
+};
+
+namespace Colors {
+// clang-format off
+const RGB Red      = {1.0f, 0.0f, 0.0f};
+const RGB Green    = {0.0f, 1.0f, 0.0f};
+const RGB Blue     = {0.0f, 0.0f, 1.0f};
+const RGB White    = {1.0f, 1.0f, 1.0f};
+const RGB Black    = {0.0f, 0.0f, 0.0f};
+const RGB Grey     = {0.5f, 0.5f, 0.5f};
+const RGB Platinum = {0.9f, 0.9f, 0.9f};
+// clang-format on
+} // namespace Colors
+
 struct Message {
   MessageType::Type type;
   std::any data;
