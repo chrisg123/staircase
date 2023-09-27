@@ -55,6 +55,8 @@ struct Message {
   std::any data;
 };
 
+enum class RenderingMode { None, DrawCheckerboard, RenderStepFile };
+
 class AppContext {
 public:
   AppContext() { app = XCAFApp_Application::GetApplication(); }
@@ -72,7 +74,9 @@ public:
     std::swap(localQueue, messageQueue);
     return localQueue;
   }
-  bool shouldDrawCheckerboard = false;
+  RenderingMode renderingMode = RenderingMode::None;
+  DocHandle currentlyViewingDoc;
+
   GLuint shaderProgram;
   GLint canvasWidth = 0;
   GLint canvasHeight = 0;
@@ -137,7 +141,7 @@ void main_loop(void *arg) {
           std::any_cast<std::string>(message.data).c_str());
       break;
     case MessageType::DrawCheckerboard:
-      context->shouldDrawCheckerboard = true;
+      context->renderingMode = RenderingMode::DrawCheckerboard;
       break;
     case MessageType::ReadStepFile: {
       std::string stepFileStr =
@@ -165,9 +169,9 @@ void main_loop(void *arg) {
     }
     case MessageType::RenderStepFile:
       DocHandle aDoc = std::any_cast<DocHandle>(message.data);
-
-      renderStepFile(*context, aDoc);
-
+      context->currentlyViewingDoc = aDoc;
+      context->renderingMode = RenderingMode::RenderStepFile;
+      printLabels(aDoc->Main());
       break;
     }
   }
@@ -393,12 +397,12 @@ void readStepFile(AppContext &context, std::string stepFileStr,
   callback(docOpt);
 }
 
-void renderStepFile(AppContext &context, DocHandle &aDoc) {
+void renderStepFile(AppContext &context) {
+  DocHandle aDoc = context.currentlyViewingDoc;
   if (aDoc.IsNull()) {
     std::cerr << "aDoc cannot be null" << std::endl;
     return;
   }
-  printLabels(aDoc->Main());
 }
 
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
@@ -460,8 +464,13 @@ void draw(AppContext &context) {
     std::cerr << "OpenGL error: " << err << std::endl;
     return;
   }
-
   clearCanvas(Colors::Platinum);
 
-  if (context.shouldDrawCheckerboard) { drawCheckerBoard(context); }
+  switch (context.renderingMode) {
+  case RenderingMode::DrawCheckerboard: drawCheckerBoard(context); break;
+  case RenderingMode::RenderStepFile: renderStepFile(context); break;
+  default:
+    // TODO: clear canvas
+    break;
+  }
 }
