@@ -445,21 +445,11 @@ void drawCheckerBoard(AppContext &context) {
 
   for (int i = 0; i < cols; ++i) {
     for (int j = 0; j < rows; ++j) {
-      float r, g, b;
-      if ((i + j) % 2 == 0) {
-        r = 0.0f;
-        g = 1.0f;
-        b = 0.0f; // Green
-      } else {
-        r = 0.0f;
-        g = 0.0f;
-        b = 1.0f; // Blue
-      }
-
+      RGB color = (i + j) % 2 == 0 ? Colors::Green: Colors::Blue;
       float x = coordMin + (i * squareSize);
       float y = (coordMin / aspectRatio) + (j * squareSize);
 
-      drawSquare(context, x, y, squareSize, r, g, b, aspectRatio);
+      drawSquare(context, x, y, squareSize, color.r, color.g, color.b, aspectRatio);
     }
   }
 }
