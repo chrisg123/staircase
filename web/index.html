@@ -7,7 +7,7 @@
             h1 {
                 font-size: 1.2em;
             }
-            #stepViewerCanvas {
+            #staircase-canvas {
                 width: 800px;
                 height: 600px;
                 border: 1px solid #000;
@@ -24,7 +24,7 @@
             <span id="version"></span>
         </div>
         <h1>Step File Viewer</h1>
-        <canvas id="stepViewerCanvas"></canvas>
+        <div id="staircase-container"></div>
         <div>
             <input type="file" id="stepFileInput" accept=".step" />
             <button id="loadStepFile">Load STEP File</button>
@@ -36,55 +36,5 @@
 
         <script async type="text/javascript" src="StepViewer.js"></script>
 
-        <script type="text/javascript">
-            function updateCanvasSize() {
-                const canvas = document.getElementById("stepViewerCanvas");
-                var computedStyle = window.getComputedStyle(canvas);
-                var cssWidth = parseInt(
-                    computedStyle.getPropertyValue("width"),
-                    10,
-                );
-                var cssHeight = parseInt(
-                    computedStyle.getPropertyValue("height"),
-                    10,
-                );
-                var devicePixelRatio = window.devicePixelRatio || 1;
-                canvas.width = cssWidth * devicePixelRatio;
-                canvas.height = cssHeight * devicePixelRatio;
-            }
-
-            function drawSomething() {
-                // Draw blue and green checkerboard.
-                var canvas = document.getElementById("stepViewerCanvas");
-                updateCanvasSize();
-                var ctx = canvas.getContext("2d");
-                rows = 12;
-                cols = 16;
-                squareSize = 50;
-
-                for (var i = 0; i < cols; i++) {
-                    for (var j = 0; j < rows; j++) {
-                        var color;
-                        if ((i + j) % 2 === 0) {
-                            color = "#00FF00";
-                        } else {
-                            color = "#0000FF";
-                        }
-                        ctx.fillStyle = color;
-                        ctx.fillRect(
-                            i * squareSize,
-                            j * squareSize,
-                            squareSize,
-                            squareSize,
-                        );
-                    }
-                }
-                var ctx = canvas.getContext("2d");
-            }
-
-            window.onload = function () {
-                drawSomething();
-            };
-        </script>
     </body>
 </html>
