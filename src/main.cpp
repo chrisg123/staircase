@@ -20,15 +20,32 @@
 using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
-enum class MessageType {
-  SetVersionString,
-  DrawCheckerboard,
-  ReadStepFile,
-  ReadStepFileDone
-};
+namespace MessageType {
+  enum Type {
+    SetVersionString,
+    DrawCheckerboard,
+    ReadStepFile,
+    RenderStepFile
+  };
+
+  static const char* toString(Type type) {
+    switch (type) {
+      case SetVersionString:
+        return "SetVersionString";
+      case DrawCheckerboard:
+        return "DrawCheckerboard";
+      case ReadStepFile:
+        return "ReadStepFile";
+      case RenderStepFile:
+        return "RenderStepFile";
+      default:
+        return "Unknown";
+    }
+  }
+}
 
 struct Message {
-  MessageType type;
+  MessageType::Type type;
   std::any data;
 };
 
@@ -89,9 +106,9 @@ GLuint createShaderProgram(char const *vertexShaderSource,
 void printLabels(TDF_Label const &label, int level = 0);
 std::optional<DocHandle> readInto(std::function<DocHandle()> aNewDoc,
                                   std::istream &fromStream);
-void readSTEPFile(AppContext &context, std::string stepFileStr,
+void readStepFile(AppContext &context, std::string stepFileStr,
                   CallbackType callback);
-void readStepFileDone();
+void renderStepFile(AppContext &context, DocHandle &aDoc);
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
                 GLfloat r, GLfloat g, GLfloat b, float aspectRatio);
 void draw(AppContext &context);
@@ -104,20 +121,18 @@ void main_loop(void *arg) {
   while (!localQueue.empty()) {
     auto message = localQueue.front();
     localQueue.pop();
+    std::cout << "[RCV] " << MessageType::toString(message.type) << std::endl;
 
     switch (message.type) {
     case MessageType::SetVersionString:
-      std::cout << "[REC MSG] MessageType::SetVersionString" << std::endl;
       EM_ASM(
           { document.getElementById('version').innerHTML = UTF8ToString($0); },
           std::any_cast<std::string>(message.data).c_str());
       break;
     case MessageType::DrawCheckerboard:
-      std::cout << "[REC MSG] MessageType::DrawCheckerboard" << std::endl;
       context->shouldDrawCheckerboard = true;
       break;
     case MessageType::ReadStepFile: {
-      std::cout << "[REC MSG] MessageType::ReadStepFile" << std::endl;
       std::string stepFileStr =
           std::any_cast<std::string>(message.data).c_str();
 
@@ -126,19 +141,26 @@ void main_loop(void *arg) {
           stepFileStr.c_str());
 
       std::thread([&, context]() {
-        readSTEPFile(*context, stepFileStr,
-                     [&](std::optional<DocHandle> docOpt) {
-                       Message msg;
-                       msg.type = MessageType::ReadStepFileDone;
-                       msg.data = docOpt.value();
-                       context->pushMessage(msg);
-                     });
+        readStepFile(
+            *context, stepFileStr, [&](std::optional<DocHandle> docOpt) {
+              if (!docOpt.has_value()) {
+                std::cerr << "Failed to read STEP file: DocHandle is empty"
+                          << std::endl;
+                return;
+              }
+              Message msg;
+              msg.type = MessageType::RenderStepFile;
+              msg.data = docOpt.value();
+              context->pushMessage(msg);
+            });
       }).detach();
       break;
     }
-    case MessageType::ReadStepFileDone:
-      std::cout << "[REC MSG] MessageType::ReadStepFileDone" << std::endl;
-      readStepFileDone();
+    case MessageType::RenderStepFile:
+      DocHandle aDoc = std::any_cast<DocHandle>(message.data);
+
+      renderStepFile(*context, aDoc);
+
       break;
     }
   }
@@ -339,7 +361,7 @@ void printLabels(TDF_Label const &label, int level) {
   }
 }
 
-void readSTEPFile(AppContext &context, std::string stepFileStr,
+void readStepFile(AppContext &context, std::string stepFileStr,
                   CallbackType callback) {
 
   auto aNewDoc = [&]() -> DocHandle {
@@ -355,12 +377,17 @@ void readSTEPFile(AppContext &context, std::string stepFileStr,
     Timer timer = Timer("readInto(aNewDoc, fromStream)");
     docOpt = readInto(aNewDoc, fromStream);
   }
-  if (docOpt.has_value()) { printLabels(docOpt.value()->Main()); }
 
   callback(docOpt);
 }
 
-void readStepFileDone() { std::cout << "TODO: readStepFileDone" << std::endl; }
+void renderStepFile(AppContext &context, DocHandle &aDoc) {
+  if (aDoc.IsNull()) {
+    std::cerr << "aDoc cannot be null" << std::endl;
+    return;
+  }
+  printLabels(aDoc->Main());
+}
 
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
                 GLfloat r, GLfloat g, GLfloat b, float aspectRatio) {
