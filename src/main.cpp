@@ -461,5 +461,7 @@ void draw(AppContext &context) {
     return;
   }
 
+  clearCanvas(Colors::Platinum);
+
   if (context.shouldDrawCheckerboard) { drawCheckerBoard(context); }
 }
