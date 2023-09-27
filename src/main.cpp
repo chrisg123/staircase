@@ -218,6 +218,11 @@ int main() {
   return 0;
 }
 
+void clearCanvas(RGB color) {
+  glClearColor(color.r, color.g, color.b, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
 void createCanvas(std::string containerId, std::string canvasId) {
   EM_ASM(
       {
