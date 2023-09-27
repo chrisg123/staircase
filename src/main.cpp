@@ -95,6 +95,7 @@ void readStepFileDone();
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
                 GLfloat r, GLfloat g, GLfloat b, float aspectRatio);
 void draw(AppContext &context);
+void drawCheckerBoard(AppContext &context);
 
 void main_loop(void *arg) {
   AppContext *context = static_cast<AppContext *>(arg);
@@ -385,6 +386,45 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
   glDeleteBuffers(1, &vertexBuffer);
 }
 
+void drawCheckerBoard(AppContext &context) {
+  float squareSizePixels = context.canvasWidth * 0.05f;
+
+  int rows = static_cast<int>(context.canvasHeight / squareSizePixels);
+  int cols = static_cast<int>(context.canvasWidth / squareSizePixels);
+
+  if (squareSizePixels * rows < context.canvasHeight) { rows += 1; }
+  if (squareSizePixels * cols < context.canvasWidth) { cols += 1; }
+
+  float aspectRatio = static_cast<float>(context.canvasWidth) /
+                      static_cast<float>(context.canvasHeight);
+
+  float const coordMin = -1.0f;
+  float const coordMax = 1.0f;
+  float const coordRange = coordMax - coordMin;
+
+  float squareSize = coordRange / std::max(rows, cols);
+
+  for (int i = 0; i < cols; ++i) {
+    for (int j = 0; j < rows; ++j) {
+      float r, g, b;
+      if ((i + j) % 2 == 0) {
+        r = 0.0f;
+        g = 1.0f;
+        b = 0.0f; // Green
+      } else {
+        r = 0.0f;
+        g = 0.0f;
+        b = 1.0f; // Blue
+      }
+
+      float x = coordMin + (i * squareSize);
+      float y = (coordMin / aspectRatio) + (j * squareSize);
+
+      drawSquare(context, x, y, squareSize, r, g, b, aspectRatio);
+    }
+  }
+}
+
 void draw(AppContext &context) {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
@@ -392,33 +432,5 @@ void draw(AppContext &context) {
     return;
   }
 
-  if (context.shouldDrawCheckerboard) {
-    int rows = 14;
-    int cols = 16;
-
-    float aspectRatio = static_cast<float>(context.canvasWidth) /
-                        static_cast<float>(context.canvasHeight);
-
-    float squareSize = 2.0f / std::max(rows, cols);
-
-    for (int i = 0; i < cols; ++i) {
-      for (int j = 0; j < rows; ++j) {
-        float r, g, b;
-        if ((i + j) % 2 == 0) {
-          r = 0.0f;
-          g = 1.0f;
-          b = 0.0f; // Green
-        } else {
-          r = 0.0f;
-          g = 0.0f;
-          b = 1.0f; // Blue
-        }
-
-        float x = -1.0f + i * squareSize;
-        float y = -1.0f + j * squareSize;
-
-        drawSquare(context, x, y, squareSize, r, g, b, aspectRatio);
-      }
-    }
-  }
+  if (context.shouldDrawCheckerboard) { drawCheckerBoard(context); }
 }
