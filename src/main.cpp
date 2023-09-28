@@ -49,13 +49,14 @@ const RGB Grey     = {0.5f, 0.5f, 0.5f};
 const RGB Platinum = {0.9f, 0.9f, 0.9f};
 // clang-format on
 } // namespace Colors
+enum class RenderingMode { None, DrawCheckerboard, RenderStepFile };
 
+namespace Staircase {
 struct Message {
   MessageType::Type type;
   std::any data;
 };
-
-enum class RenderingMode { None, DrawCheckerboard, RenderStepFile };
+}
 
 class AppContext {
 public:
@@ -63,14 +64,14 @@ public:
 
   Handle(XCAFApp_Application) getApp() const { return app; }
 
-  void pushMessage(Message const &msg) {
+  void pushMessage(Staircase::Message const &msg) {
     std::lock_guard<std::mutex> lock(queueMutex);
     messageQueue.push(msg);
   }
 
-  std::queue<Message> drainMessageQueue() {
+  std::queue<Staircase::Message> drainMessageQueue() {
     std::lock_guard<std::mutex> lock(queueMutex);
-    std::queue<Message> localQueue;
+    std::queue<Staircase::Message> localQueue;
     std::swap(localQueue, messageQueue);
     return localQueue;
   }
@@ -83,7 +84,7 @@ public:
 
 private:
   Handle(XCAFApp_Application) app;
-  std::queue<Message> messageQueue;
+  std::queue<Staircase::Message> messageQueue;
   std::mutex queueMutex;
 };
 class Timer {
@@ -159,7 +160,7 @@ void main_loop(void *arg) {
                           << std::endl;
                 return;
               }
-              Message msg;
+              Staircase::Message msg;
               msg.type = MessageType::RenderStepFile;
               msg.data = docOpt.value();
               context->pushMessage(msg);
