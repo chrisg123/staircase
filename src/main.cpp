@@ -430,14 +430,6 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
 }
 
 void drawCheckerBoard(AppContext &context) {
-  float squareSizePixels = context.canvasWidth * 0.05f;
-
-  int rows = static_cast<int>(context.canvasHeight / squareSizePixels);
-  int cols = static_cast<int>(context.canvasWidth / squareSizePixels);
-
-  if (squareSizePixels * rows < context.canvasHeight) { rows += 1; }
-  if (squareSizePixels * cols < context.canvasWidth) { cols += 1; }
-
   float aspectRatio = static_cast<float>(context.canvasWidth) /
                       static_cast<float>(context.canvasHeight);
 
@@ -445,15 +437,24 @@ void drawCheckerBoard(AppContext &context) {
   float const coordMax = 1.0f;
   float const coordRange = coordMax - coordMin;
 
-  float squareSize = coordRange / std::max(rows, cols);
+  // determine rows and columns based arbitrarily on 5% of the longer side.
+  float fivePercentLongestSide =
+      std::max(context.canvasHeight, context.canvasWidth) * 0.05f;
+  int rows = static_cast<int>(context.canvasHeight / fivePercentLongestSide);
+  int cols = static_cast<int>(context.canvasWidth / fivePercentLongestSide);
+
+  // Adjust square size to fit perfectly within canvas width
+  float squareSize = coordRange / cols;
+  if (squareSize * rows < coordRange) { rows += 1; }
 
   for (int i = 0; i < cols; ++i) {
     for (int j = 0; j < rows; ++j) {
-      RGB color = (i + j) % 2 == 0 ? Colors::Green: Colors::Blue;
+      RGB color = (i + j) % 2 == 0 ? Colors::Green : Colors::Blue;
       float x = coordMin + (i * squareSize);
+      // Scale y by aspect ratio since square size is based on canvas width.
       float y = (coordMin / aspectRatio) + (j * squareSize);
-
-      drawSquare(context, x, y, squareSize, color.r, color.g, color.b, aspectRatio);
+      drawSquare(context, x, y, squareSize, color.r, color.g, color.b,
+                 aspectRatio);
     }
   }
 }
