@@ -1,5 +1,9 @@
 #include "EmbeddedStepFile.h"
+#include <AIS_InteractiveContext.hxx>
+#include <Aspect_DisplayConnection.hxx>
 #include <GLES2/gl2.h>
+#include <OpenGl_GraphicDriver.hxx>
+#include <V3d_View.hxx>
 #include <algorithm>
 #include <any>
 #include <chrono>
@@ -56,7 +60,7 @@ struct Message {
   MessageType::Type type;
   std::any data;
 };
-}
+} // namespace Staircase
 
 class AppContext {
 public:
@@ -81,6 +85,9 @@ public:
   GLuint shaderProgram;
   GLint canvasWidth = 0;
   GLint canvasHeight = 0;
+
+  Handle(V3d_Viewer) viewer;
+  Handle(AIS_InteractiveContext) viewerContext;
 
 private:
   Handle(XCAFApp_Application) app;
@@ -109,6 +116,7 @@ private:
 bool arePthreadsEnabled();
 void createCanvas(std::string containerId, std::string canvasId);
 void setupWebGLContext(std::string const &canvasId);
+void initializeOcctComponents(AppContext &context);
 void setupViewport(AppContext &context);
 void compileShader(GLuint &shader, char const *source, GLenum type);
 GLuint linkProgram(GLuint vertexShader, GLuint fragmentShader);
@@ -198,6 +206,7 @@ int main() {
   createCanvas(containerId, canvasId);
   setupWebGLContext(canvasId);
   setupViewport(context);
+  initializeOcctComponents(context);
 
   std::cout << "Canvas size: " << context.canvasWidth << "x"
             << context.canvasHeight << std::endl;
@@ -270,6 +279,18 @@ void setupWebGLContext(std::string const &canvasId) {
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx =
       emscripten_webgl_create_context(("#" + canvasId).c_str(), &attrs);
   emscripten_webgl_make_context_current(ctx);
+}
+
+void initializeOcctComponents(AppContext &context) {
+
+  Handle(Aspect_DisplayConnection) aDisp;
+  Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
+
+  Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
+  Handle(AIS_InteractiveContext) aContext = new AIS_InteractiveContext(aViewer);
+
+  context.viewer = aViewer;
+  context.viewerContext = aContext;
 }
 
 void setupViewport(AppContext &context) {

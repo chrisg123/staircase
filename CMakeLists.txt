@@ -45,6 +45,7 @@ target_link_libraries(
   TKSTEP209
   TKSTEPAttr
   TKXDESTEP
+  TKOpenGles
 )
 
 set_target_properties(StepViewer PROPERTIES LINK_FLAGS "-s PTHREAD_POOL_SIZE=4")
