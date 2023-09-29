@@ -15,10 +15,10 @@ include_directories(${EMSDK_SYSROOT}/include
 
 link_directories(${EMSDK_SYSROOT}/lib)
 
-add_executable(StepViewer ${SRC_DIR}/main.cpp)
+add_executable(staircase ${SRC_DIR}/main.cpp)
 
 target_link_libraries(
-  StepViewer
+  staircase
   freetype
   TKRWMesh
   TKXCAF
@@ -48,4 +48,4 @@ target_link_libraries(
   TKOpenGles
 )
 
-set_target_properties(StepViewer PROPERTIES LINK_FLAGS "-s PTHREAD_POOL_SIZE=4")
+set_target_properties(staircase PROPERTIES LINK_FLAGS "-s PTHREAD_POOL_SIZE=4")
