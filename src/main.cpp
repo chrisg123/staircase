@@ -454,13 +454,45 @@ void readStepFile(AppContext &context, std::string stepFileStr,
   callback(docOpt);
 }
 
+void loadShapesFromDoc(DocHandle const aDoc,
+                       Handle(AIS_InteractiveContext) const aisContext) {
+
+  TDF_Label mainLabel = aDoc->Main();
+
+  Handle(XCAFDoc_ShapeTool) shapeTool =
+      XCAFDoc_DocumentTool::ShapeTool(mainLabel);
+
+  for (TDF_ChildIterator it(mainLabel, Standard_True); it.More(); it.Next()) {
+    TDF_Label label = it.Value();
+
+    if (!shapeTool->IsShape(label)) { continue; }
+
+    TopoDS_Shape shape;
+    if (!shapeTool->GetShape(label, shape) || shape.IsNull()) {
+      std::cerr << "Failed to get shape from label." << std::endl;
+      continue;
+    }
+
+    Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+
+    aisContext->Display(aisShape, Standard_True);
+  }
+}
+
 void renderStepFile(AppContext &context) {
   DocHandle aDoc = context.currentlyViewingDoc;
-  if (aDoc.IsNull()) {
-    std::cerr << "aDoc cannot be null" << std::endl;
+  Handle(AIS_InteractiveContext) aisContext = context.aisContext;
+
+  if (aDoc.IsNull() || context.aisContext.IsNull()) {
+    std::cerr << "No document or AIS context available to render." << std::endl;
     return;
   }
 
+  if (!context.stepFileLoaded) {
+
+    loadShapesFromDoc(aDoc, aisContext);
+    context.stepFileLoaded = true;
+  }
 }
 
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
