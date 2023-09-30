@@ -507,7 +507,7 @@ void loadShapesFromDoc(DocHandle const aDoc,
 void renderStepFile(AppContext &context) {
   DocHandle aDoc = context.currentlyViewingDoc;
   Handle(AIS_InteractiveContext) aisContext = context.aisContext;
-
+  Handle(V3d_View) aView = context.view;
   if (aDoc.IsNull() || context.aisContext.IsNull()) {
     std::cerr << "No document or AIS context available to render." << std::endl;
     return;
@@ -518,6 +518,15 @@ void renderStepFile(AppContext &context) {
     loadShapesFromDoc(aDoc, aisContext);
     context.stepFileLoaded = true;
   }
+
+  static double angle = 0.0;
+  angle += 0.01;
+  if (angle >= 2 * M_PI) angle = 0.0;
+
+  gp_Dir aDir(sin(angle), cos(angle), aView->Camera()->Direction().Z());
+  aView->Camera()->SetDirection(aDir);
+  aView->Redraw();
+
 }
 
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
