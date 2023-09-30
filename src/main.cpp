@@ -333,16 +333,15 @@ void initializeOcctComponents(AppContext &context) {
   }
 
   Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
-  aViewer->SetComputedMode (false);
-  aViewer->SetDefaultShadingModel (Graphic3d_TypeOfShadingModel_Phong);
+  aViewer->SetComputedMode(false);
+  aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
-  for (V3d_ListOfLight::Iterator aLightIter (aViewer->ActiveLights()); aLightIter.More(); aLightIter.Next())
-  {
-    const Handle(V3d_Light)& aLight = aLightIter.Value();
-    if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
-    {
-      aLight->SetCastShadows (true);
+  for (V3d_ListOfLight::Iterator aLightIter(aViewer->ActiveLights());
+       aLightIter.More(); aLightIter.Next()) {
+    const Handle(V3d_Light) &aLight = aLightIter.Value();
+    if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional) {
+      aLight->SetCastShadows(true);
     }
   }
 
@@ -350,24 +349,25 @@ void initializeOcctComponents(AppContext &context) {
   aWindow->Size(context.canvasWidth, context.canvasHeight);
 
   Handle(Prs3d_TextAspect) myTextStyle = new Prs3d_TextAspect();
-  myTextStyle->SetFont (Font_NOF_ASCII_MONO);
-  myTextStyle->SetHeight (12);
-  myTextStyle->Aspect()->SetColor (Quantity_NOC_GRAY95);
-  myTextStyle->Aspect()->SetColorSubTitle (Quantity_NOC_BLACK);
-  myTextStyle->Aspect()->SetDisplayType (Aspect_TODT_SHADOW);
-  myTextStyle->Aspect()->SetTextFontAspect (Font_FA_Bold);
-  myTextStyle->Aspect()->SetTextZoomable (false);
-  myTextStyle->SetHorizontalJustification (Graphic3d_HTA_LEFT);
-  myTextStyle->SetVerticalJustification (Graphic3d_VTA_BOTTOM);
+  myTextStyle->SetFont(Font_NOF_ASCII_MONO);
+  myTextStyle->SetHeight(12);
+  myTextStyle->Aspect()->SetColor(Quantity_NOC_GRAY95);
+  myTextStyle->Aspect()->SetColorSubTitle(Quantity_NOC_BLACK);
+  myTextStyle->Aspect()->SetDisplayType(Aspect_TODT_SHADOW);
+  myTextStyle->Aspect()->SetTextFontAspect(Font_FA_Bold);
+  myTextStyle->Aspect()->SetTextZoomable(false);
+  myTextStyle->SetHorizontalJustification(Graphic3d_HTA_LEFT);
+  myTextStyle->SetVerticalJustification(Graphic3d_VTA_BOTTOM);
 
   Handle(V3d_View) aView = aViewer->CreateView();
-  aView->Camera()->SetProjectionType (Graphic3d_Camera::Projection_Perspective);
-  aView->SetImmediateUpdate (false);
+  aView->Camera()->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
+  aView->SetImmediateUpdate(false);
   aView->ChangeRenderingParams().IsShadowEnabled = false;
-  aView->ChangeRenderingParams().Resolution = (unsigned int )(96.0 * myDevicePixelRatio + 0.5);
+  aView->ChangeRenderingParams().Resolution =
+      (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
   aView->ChangeRenderingParams().ToShowStats = true;
   aView->ChangeRenderingParams().StatsTextAspect = myTextStyle->Aspect();
-  aView->ChangeRenderingParams().StatsTextHeight = (int )myTextStyle->Height();
+  aView->ChangeRenderingParams().StatsTextHeight = (int)myTextStyle->Height();
   aView->SetWindow(aWindow);
 
   Handle(AIS_InteractiveContext) aContext = new AIS_InteractiveContext(aViewer);
