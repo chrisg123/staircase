@@ -97,6 +97,7 @@ public:
 
   bool stepFileLoaded = false;
   bool occtComponentsInitialized = false;
+  bool shouldRotate = true;
   std::string canvasId;
 
 private:
@@ -143,6 +144,29 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
 void draw(AppContext &context);
 void drawCheckerBoard(AppContext &context);
 void clearCanvas(RGB color);
+
+EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
+                        void *userData) {
+  AppContext* context = static_cast<AppContext*>(userData);
+
+  switch (eventType) {
+  case EMSCRIPTEN_EVENT_MOUSEDOWN:
+    std::cout << "[EVT] EMSCRIPTEN_EVENT_MOUSEDOWN" << std::endl;
+    context->shouldRotate = !context->shouldRotate;
+    break;
+  default:
+    std::cout << "Unhandled mouse event type: " << eventType << std::endl;
+    break;
+  }
+  return EM_TRUE;
+}
+
+void initializeUserInteractions(AppContext &context) {
+  const EM_BOOL toUseCapture = EM_TRUE;
+
+  emscripten_set_mousedown_callback(("#" + context.canvasId).c_str(), &context,
+                                    toUseCapture, onMouseCallback);
+}
 
 void main_loop(void *arg) {
 
@@ -216,6 +240,7 @@ int main() {
   context.canvasId = "staircase-canvas";
 
   createCanvas(containerId, context.canvasId);
+  initializeUserInteractions(context);
   setupWebGLContext(context.canvasId);
   setupViewport(context);
 
@@ -519,14 +544,15 @@ void renderStepFile(AppContext &context) {
     context.stepFileLoaded = true;
   }
 
-  static double angle = 0.0;
-  angle += 0.01;
-  if (angle >= 2 * M_PI) angle = 0.0;
+  if (context.shouldRotate) {
+    static double angle = 0.0;
+    angle += 0.01;
+    if (angle >= 2 * M_PI) { angle = 0.0; }
 
-  gp_Dir aDir(sin(angle), cos(angle), aView->Camera()->Direction().Z());
-  aView->Camera()->SetDirection(aDir);
-  aView->Redraw();
-
+    gp_Dir aDir(sin(angle), cos(angle), aView->Camera()->Direction().Z());
+    aView->Camera()->SetDirection(aDir);
+    aView->Redraw();
+  }
 }
 
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
