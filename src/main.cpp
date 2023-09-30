@@ -4,6 +4,8 @@
 #include <GLES2/gl2.h>
 #include <OpenGl_GraphicDriver.hxx>
 #include <V3d_View.hxx>
+#include <Wasm_Window.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
 #include <algorithm>
 #include <any>
 #include <chrono>
@@ -11,12 +13,14 @@
 #include <emscripten/html5.h>
 #include <iostream>
 #include <mutex>
+#include <opencascade/AIS_Shape.hxx>
 #include <opencascade/STEPCAFControl_Reader.hxx>
 #include <opencascade/Standard_Version.hxx>
 #include <opencascade/TDF_ChildIterator.hxx>
 #include <opencascade/TDataStd_Name.hxx>
 #include <opencascade/TDocStd_Document.hxx>
 #include <opencascade/XCAFApp_Application.hxx>
+#include <opencascade/XCAFDoc_ShapeTool.hxx>
 #include <optional>
 #include <queue>
 #include <thread>
@@ -88,6 +92,12 @@ public:
 
   Handle(V3d_Viewer) viewer;
   Handle(AIS_InteractiveContext) viewerContext;
+  Handle(V3d_View) view;
+  Handle(AIS_InteractiveContext) aisContext;
+
+  bool stepFileLoaded = false;
+  bool occtComponentsInitialized = false;
+  std::string canvasId;
 
 private:
   Handle(XCAFApp_Application) app;
@@ -135,7 +145,9 @@ void drawCheckerBoard(AppContext &context);
 void clearCanvas(RGB color);
 
 void main_loop(void *arg) {
+
   AppContext *context = static_cast<AppContext *>(arg);
+
   auto localQueue = context->drainMessageQueue();
 
   while (!localQueue.empty()) {
@@ -201,12 +213,11 @@ int main() {
   std::cout << "Pthreads enabled" << std::endl;
 
   std::string containerId = "staircase-container";
-  std::string canvasId = "staircase-canvas";
+  context.canvasId = "staircase-canvas";
 
-  createCanvas(containerId, canvasId);
-  setupWebGLContext(canvasId);
+  createCanvas(containerId, context.canvasId);
+  setupWebGLContext(context.canvasId);
   setupViewport(context);
-  initializeOcctComponents(context);
 
   std::cout << "Canvas size: " << context.canvasWidth << "x"
             << context.canvasHeight << std::endl;
@@ -257,6 +268,8 @@ void createCanvas(std::string containerId, std::string canvasId) {
           canvas.width = cssWidth * devicePixelRatio;
           canvas.height = cssHeight * devicePixelRatio;
         }
+        // Set the canvas to emscripten Module object
+        Module['canvas'] = canvas;
       },
       containerId.c_str(), canvasId.c_str());
 }
@@ -286,11 +299,33 @@ void initializeOcctComponents(AppContext &context) {
   Handle(Aspect_DisplayConnection) aDisp;
   Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
 
+  if (!aDriver->InitContext()) {
+    std::cerr << "Error: EGL initialization failed" << std::endl;
+    return;
+  }
+
   Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
   Handle(AIS_InteractiveContext) aContext = new AIS_InteractiveContext(aViewer);
 
   context.viewer = aViewer;
-  context.viewerContext = aContext;
+  context.aisContext = aContext;
+
+  Handle(Wasm_Window) aWindow = new Wasm_Window(context.canvasId.c_str());
+  if (aWindow.IsNull()) {
+    std::cerr << "Failed to initialize Wasm_Window." << std::endl;
+    return;
+  }
+
+  aWindow->Size(context.canvasWidth, context.canvasHeight);
+
+  Handle(V3d_View) aView = context.viewer->CreateView();
+  if (aView.IsNull()) {
+    std::cerr << "Failed to initialize V3d_View." << std::endl;
+    return;
+  }
+
+  context.view = aView;
+  aView->SetWindow(aWindow);
 }
 
 void setupViewport(AppContext &context) {
@@ -425,6 +460,7 @@ void renderStepFile(AppContext &context) {
     std::cerr << "aDoc cannot be null" << std::endl;
     return;
   }
+
 }
 
 void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
@@ -487,13 +523,17 @@ void draw(AppContext &context) {
     std::cerr << "OpenGL error: " << err << std::endl;
     return;
   }
-  clearCanvas(Colors::Platinum);
 
   switch (context.renderingMode) {
   case RenderingMode::DrawCheckerboard: drawCheckerBoard(context); break;
-  case RenderingMode::RenderStepFile: renderStepFile(context); break;
+  case RenderingMode::RenderStepFile:
+    if (!context.occtComponentsInitialized) {
+      initializeOcctComponents(context);
+      context.occtComponentsInitialized = true;
+    }
+    renderStepFile(context);
+    break;
   default:
-    // TODO: clear canvas
     break;
   }
 }
