@@ -296,8 +296,11 @@ void setupWebGLContext(std::string const &canvasId) {
 
 void initializeOcctComponents(AppContext &context) {
 
+  float myDevicePixelRatio = emscripten_get_device_pixel_ratio();
   Handle(Aspect_DisplayConnection) aDisp;
   Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
+  aDriver->ChangeOptions().buffersNoSwap = true;
+  aDriver->ChangeOptions().buffersOpaqueAlpha = true;
 
   if (!aDriver->InitContext()) {
     std::cerr << "Error: EGL initialization failed" << std::endl;
@@ -305,27 +308,49 @@ void initializeOcctComponents(AppContext &context) {
   }
 
   Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
+  aViewer->SetComputedMode (false);
+  aViewer->SetDefaultShadingModel (Graphic3d_TypeOfShadingModel_Phong);
+  aViewer->SetDefaultLights();
+  aViewer->SetLightOn();
+  for (V3d_ListOfLight::Iterator aLightIter (aViewer->ActiveLights()); aLightIter.More(); aLightIter.Next())
+  {
+    const Handle(V3d_Light)& aLight = aLightIter.Value();
+    if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
+    {
+      aLight->SetCastShadows (true);
+    }
+  }
+
+  Handle(Wasm_Window) aWindow = new Wasm_Window(context.canvasId.c_str());
+  aWindow->Size(context.canvasWidth, context.canvasHeight);
+
+  Handle(Prs3d_TextAspect) myTextStyle = new Prs3d_TextAspect();
+  myTextStyle->SetFont (Font_NOF_ASCII_MONO);
+  myTextStyle->SetHeight (12);
+  myTextStyle->Aspect()->SetColor (Quantity_NOC_GRAY95);
+  myTextStyle->Aspect()->SetColorSubTitle (Quantity_NOC_BLACK);
+  myTextStyle->Aspect()->SetDisplayType (Aspect_TODT_SHADOW);
+  myTextStyle->Aspect()->SetTextFontAspect (Font_FA_Bold);
+  myTextStyle->Aspect()->SetTextZoomable (false);
+  myTextStyle->SetHorizontalJustification (Graphic3d_HTA_LEFT);
+  myTextStyle->SetVerticalJustification (Graphic3d_VTA_BOTTOM);
+
+  Handle(V3d_View) aView = aViewer->CreateView();
+  aView->Camera()->SetProjectionType (Graphic3d_Camera::Projection_Perspective);
+  aView->SetImmediateUpdate (false);
+  aView->ChangeRenderingParams().IsShadowEnabled = false;
+  aView->ChangeRenderingParams().Resolution = (unsigned int )(96.0 * myDevicePixelRatio + 0.5);
+  aView->ChangeRenderingParams().ToShowStats = true;
+  aView->ChangeRenderingParams().StatsTextAspect = myTextStyle->Aspect();
+  aView->ChangeRenderingParams().StatsTextHeight = (int )myTextStyle->Height();
+  aView->SetWindow(aWindow);
+
   Handle(AIS_InteractiveContext) aContext = new AIS_InteractiveContext(aViewer);
 
+  context.view = aView;
   context.viewer = aViewer;
   context.aisContext = aContext;
 
-  Handle(Wasm_Window) aWindow = new Wasm_Window(context.canvasId.c_str());
-  if (aWindow.IsNull()) {
-    std::cerr << "Failed to initialize Wasm_Window." << std::endl;
-    return;
-  }
-
-  aWindow->Size(context.canvasWidth, context.canvasHeight);
-
-  Handle(V3d_View) aView = context.viewer->CreateView();
-  if (aView.IsNull()) {
-    std::cerr << "Failed to initialize V3d_View." << std::endl;
-    return;
-  }
-
-  context.view = aView;
-  aView->SetWindow(aWindow);
 }
 
 void setupViewport(AppContext &context) {
