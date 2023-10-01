@@ -31,6 +31,7 @@ using CallbackType = std::function<void(std::optional<DocHandle>)>;
 namespace MessageType {
 enum Type {
   SetVersionString,
+  ClearScreen,
   DrawCheckerboard,
   DrawLoadingScreen,
   ReadStepFile,
@@ -40,6 +41,7 @@ enum Type {
 static char const *toString(Type type) {
   switch (type) {
   case SetVersionString: return "SetVersionString";
+  case ClearScreen: return "ClearScreen";
   case DrawCheckerboard: return "DrawCheckerboard";
   case DrawLoadingScreen: return "DrawLoadingScreen";
   case ReadStepFile: return "ReadStepFile";
@@ -77,6 +79,7 @@ struct SpinnerParams {
 
 enum class RenderingMode {
   None,
+  ClearScreen,
   DrawCheckerboard,
   DrawLoadingScreen,
   RenderStepFile
@@ -86,6 +89,7 @@ namespace Staircase {
 struct Message {
   MessageType::Type type;
   std::any data;
+  std::function<void()> callback;
 };
 } // namespace Staircase
 
@@ -205,6 +209,10 @@ void main_loop(void *arg) {
     std::cout << "[RCV] " << MessageType::toString(message.type) << std::endl;
 
     switch (message.type) {
+    case MessageType::ClearScreen:
+      context->renderingMode = RenderingMode::None;
+      clearCanvas(Colors::Black);
+      break;
     case MessageType::SetVersionString:
       EM_ASM(
           { document.getElementById('version').innerHTML = UTF8ToString($0); },
@@ -226,15 +234,20 @@ void main_loop(void *arg) {
 
       std::thread([&, context]() {
         readStepFile(
-            *context, stepFileStr, [&](std::optional<DocHandle> docOpt) {
+            *context, stepFileStr, [context](std::optional<DocHandle> docOpt) {
               if (!docOpt.has_value()) {
                 std::cerr << "Failed to read STEP file: DocHandle is empty"
                           << std::endl;
                 return;
               }
+
               Staircase::Message msg;
-              msg.type = MessageType::RenderStepFile;
-              msg.data = docOpt.value();
+              msg.type = MessageType::ClearScreen;
+              msg.callback = [docOpt, context]() {
+                context->pushMessage(Staircase::Message{
+                    MessageType::RenderStepFile, docOpt.value(), nullptr});
+              };
+
               context->pushMessage(msg);
             });
       }).detach();
@@ -247,6 +260,8 @@ void main_loop(void *arg) {
       printLabels(aDoc->Main());
       break;
     }
+
+    if (message.callback != nullptr) { message.callback(); }
   }
 
   draw(*context);
@@ -288,14 +303,15 @@ int main() {
       "  gl_FragColor = color;"
       "}");
 
-  context.pushMessage({MessageType::SetVersionString, std::any{occt_ver_str}});
-  context.pushMessage({MessageType::DrawCheckerboard, std::any{}});
+  context.pushMessage(
+      {MessageType::SetVersionString, std::any{occt_ver_str}, nullptr});
+  context.pushMessage({MessageType::DrawCheckerboard, std::any{}, nullptr});
 
   std::thread([&]() {
     // Delay the STEP file loading to briefly show the initial checkerboard state.
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     context.pushMessage(
-        {MessageType::ReadStepFile, std::any{embeddedStepFile}});
+        {MessageType::ReadStepFile, std::any{embeddedStepFile}, nullptr});
   }).detach();
 
   emscripten_set_main_loop_arg(main_loop, &context, 0, 1);
@@ -749,18 +765,21 @@ void draw(AppContext &context) {
     std::cerr << "OpenGL error: " << err << std::endl;
     return;
   }
+  if (!context.occtComponentsInitialized) { clearCanvas(Colors::Platinum); }
 
   switch (context.renderingMode) {
+  case RenderingMode::ClearScreen: clearCanvas(Colors::Black); break;
   case RenderingMode::DrawCheckerboard: drawCheckerBoard(context); break;
   case RenderingMode::RenderStepFile:
+
     if (!context.occtComponentsInitialized) {
       initializeOcctComponents(context);
       context.occtComponentsInitialized = true;
     }
+
     renderStepFile(context);
     break;
   case RenderingMode::DrawLoadingScreen: {
-    clearCanvas(Colors::Platinum);
     drawLoadingScreen(context, context.spinnerParams);
     break;
   }
