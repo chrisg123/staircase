@@ -537,29 +537,23 @@ void readStepFile(AppContext &context, std::string stepFileStr,
   callback(docOpt);
 }
 
-void loadShapesFromDoc(DocHandle const aDoc,
-                       Handle(AIS_InteractiveContext) const aisContext) {
+std::vector<TopoDS_Shape> getShapesFromDoc(DocHandle const aDoc) {
+  std::vector<TopoDS_Shape> shapes;
 
   TDF_Label mainLabel = aDoc->Main();
-
   Handle(XCAFDoc_ShapeTool) shapeTool =
       XCAFDoc_DocumentTool::ShapeTool(mainLabel);
-
   for (TDF_ChildIterator it(mainLabel, Standard_True); it.More(); it.Next()) {
     TDF_Label label = it.Value();
-
     if (!shapeTool->IsShape(label)) { continue; }
-
     TopoDS_Shape shape;
     if (!shapeTool->GetShape(label, shape) || shape.IsNull()) {
       std::cerr << "Failed to get shape from label." << std::endl;
       continue;
     }
-
-    Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
-
-    aisContext->Display(aisShape, Standard_True);
+    shapes.push_back(shape);
   }
+  return shapes;
 }
 
 void renderStepFile(AppContext &context) {
@@ -572,8 +566,15 @@ void renderStepFile(AppContext &context) {
   }
 
   if (!context.stepFileLoaded) {
+    std::vector<TopoDS_Shape> shapes = getShapesFromDoc(aDoc);
+    {
+      Timer timer = Timer("Populate aisContext with shapes;");
+      for (auto const &shape : shapes) {
+        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+        aisContext->Display(aisShape, Standard_True);
+      }
+    }
 
-    loadShapesFromDoc(aDoc, aisContext);
     context.stepFileLoaded = true;
   }
 
