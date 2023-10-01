@@ -29,12 +29,19 @@ using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
 namespace MessageType {
-enum Type { SetVersionString, DrawCheckerboard, ReadStepFile, RenderStepFile };
+enum Type {
+  SetVersionString,
+  DrawCheckerboard,
+  DrawLoadingScreen,
+  ReadStepFile,
+  RenderStepFile
+};
 
 static char const *toString(Type type) {
   switch (type) {
   case SetVersionString: return "SetVersionString";
   case DrawCheckerboard: return "DrawCheckerboard";
+  case DrawLoadingScreen: return "DrawLoadingScreen";
   case ReadStepFile: return "ReadStepFile";
   case RenderStepFile: return "RenderStepFile";
   default: return "Unknown";
@@ -53,11 +60,27 @@ const RGB Green    = {0.0f, 1.0f, 0.0f};
 const RGB Blue     = {0.0f, 0.0f, 1.0f};
 const RGB White    = {1.0f, 1.0f, 1.0f};
 const RGB Black    = {0.0f, 0.0f, 0.0f};
-const RGB Grey     = {0.5f, 0.5f, 0.5f};
+const RGB Gray     = {0.5f, 0.5f, 0.5f};
 const RGB Platinum = {0.9f, 0.9f, 0.9f};
 // clang-format on
 } // namespace Colors
-enum class RenderingMode { None, DrawCheckerboard, RenderStepFile };
+
+struct SpinnerParams {
+  // clang-format off
+  float radius        = 15.0f;
+  float lineThickness = 2.0f;
+  float speed         = 0.1f;
+  float initialAngle  = 0.0f;
+  RGB color           = Colors::Gray;
+  // clang-format on
+};
+
+enum class RenderingMode {
+  None,
+  DrawCheckerboard,
+  DrawLoadingScreen,
+  RenderStepFile
+};
 
 namespace Staircase {
 struct Message {
@@ -98,6 +121,7 @@ public:
   bool stepFileLoaded = false;
   bool occtComponentsInitialized = false;
   bool shouldRotate = true;
+  SpinnerParams spinnerParams;
   std::string canvasId;
 
 private:
@@ -143,11 +167,12 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
                 GLfloat r, GLfloat g, GLfloat b, float aspectRatio);
 void draw(AppContext &context);
 void drawCheckerBoard(AppContext &context);
+void drawLoadingScreen(AppContext &context, SpinnerParams &spinnerParams);
 void clearCanvas(RGB color);
 
 EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
                         void *userData) {
-  AppContext* context = static_cast<AppContext*>(userData);
+  AppContext *context = static_cast<AppContext *>(userData);
 
   switch (eventType) {
   case EMSCRIPTEN_EVENT_MOUSEDOWN:
@@ -188,10 +213,13 @@ void main_loop(void *arg) {
     case MessageType::DrawCheckerboard:
       context->renderingMode = RenderingMode::DrawCheckerboard;
       break;
+    case MessageType::DrawLoadingScreen:
+      context->renderingMode = RenderingMode::DrawLoadingScreen;
+      break;
     case MessageType::ReadStepFile: {
       std::string stepFileStr =
           std::any_cast<std::string>(message.data).c_str();
-
+      context->renderingMode = RenderingMode::DrawLoadingScreen;
       EM_ASM(
           { document.getElementById('stepText').innerHTML = UTF8ToString($0); },
           stepFileStr.c_str());
@@ -262,7 +290,13 @@ int main() {
 
   context.pushMessage({MessageType::SetVersionString, std::any{occt_ver_str}});
   context.pushMessage({MessageType::DrawCheckerboard, std::any{}});
-  context.pushMessage({MessageType::ReadStepFile, std::any{embeddedStepFile}});
+
+  std::thread([&]() {
+    // Delay the STEP file loading to briefly show the initial checkerboard state.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    context.pushMessage(
+        {MessageType::ReadStepFile, std::any{embeddedStepFile}});
+  }).detach();
 
   emscripten_set_main_loop_arg(main_loop, &context, 0, 1);
 
@@ -375,7 +409,6 @@ void initializeOcctComponents(AppContext &context) {
   context.view = aView;
   context.viewer = aViewer;
   context.aisContext = aContext;
-
 }
 
 void setupViewport(AppContext &context) {
@@ -579,6 +612,61 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
   glDeleteBuffers(1, &vertexBuffer);
 }
 
+void drawCircle(AppContext &context, GLfloat centerX, GLfloat centerY,
+                GLfloat radius, RGB color, float aspectRatio) {
+  int const numSegments = 100; // Increase for a smoother circle
+
+  GLfloat vertices[numSegments * 3];
+
+  for (int i = 0; i < numSegments; ++i) {
+    float theta = 2.0f * M_PI * float(i) / float(numSegments);
+    GLfloat x = radius * cos(theta);
+    GLfloat y = radius * sin(theta);
+    vertices[i * 3] = x + centerX;
+    vertices[i * 3 + 1] = (y * aspectRatio) + centerY;
+    vertices[i * 3 + 2] = 0.0f;
+  }
+
+  GLint colorUniform = glGetUniformLocation(context.shaderProgram, "color");
+  GLint posAttrib = glGetAttribLocation(context.shaderProgram, "position");
+
+  glUniform4f(colorUniform, color.r, color.g, color.b, 1.0f);
+
+  GLuint vertexBuffer;
+  glGenBuffers(1, &vertexBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(posAttrib);
+
+  glDrawArrays(GL_LINE_LOOP, 0, numSegments);
+
+  glDeleteBuffers(1, &vertexBuffer);
+}
+
+void drawLine(AppContext &context, GLfloat x1, GLfloat y1, GLfloat x2,
+              GLfloat y2, GLfloat thickness, RGB color) {
+
+  GLfloat vertices[] = {x1, y1, 0.0f, x2, y2, 0.0f};
+
+  GLint colorUniform = glGetUniformLocation(context.shaderProgram, "color");
+  GLint posAttrib = glGetAttribLocation(context.shaderProgram, "position");
+
+  glUniform4f(colorUniform, color.r, color.g, color.b, 1.0f);
+
+  GLuint vertexBuffer;
+  glGenBuffers(1, &vertexBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(posAttrib);
+  glLineWidth(thickness);
+
+  glDrawArrays(GL_LINES, 0, 2);
+  glDeleteBuffers(1, &vertexBuffer);
+}
+
 void drawCheckerBoard(AppContext &context) {
   float aspectRatio = static_cast<float>(context.canvasWidth) /
                       static_cast<float>(context.canvasHeight);
@@ -608,6 +696,51 @@ void drawCheckerBoard(AppContext &context) {
     }
   }
 }
+void drawLoadingScreen(AppContext &context, SpinnerParams &spinnerParams) {
+  float aspectRatio = static_cast<float>(context.canvasWidth) /
+                      static_cast<float>(context.canvasHeight);
+
+  float const coordMin = -1.0f;
+  float const coordMax = 1.0f;
+  float const coordRange = coordMax - coordMin;
+
+  float centerX = 0;
+  float centerY = 0;
+  float handFactor = 0.75f;
+  float offsetX =
+      coordRange *
+      ((spinnerParams.radius * handFactor * cos(spinnerParams.initialAngle)) /
+       context.canvasWidth);
+  float offsetY =
+      coordRange *
+      ((spinnerParams.radius * handFactor * sin(spinnerParams.initialAngle)) /
+       context.canvasHeight);
+
+  float startX = centerX;
+  float startY = centerY;
+  float endX = centerX + offsetX;
+  float endY = centerY + offsetY;
+
+  drawCircle(context, 0, 0,
+             coordRange * (spinnerParams.radius / context.canvasWidth),
+             spinnerParams.color, aspectRatio);
+
+  drawLine(context, startX, startY, endX, endY, spinnerParams.lineThickness,
+           spinnerParams.color);
+
+  float dotSize = coordRange *
+                  ((spinnerParams.lineThickness * 1.1) / context.canvasWidth) *
+                  1.1;
+  drawSquare(context, centerX - dotSize / 2, centerY - dotSize / 2, dotSize,
+             spinnerParams.color.r, spinnerParams.color.g,
+             spinnerParams.color.b,
+             aspectRatio); // Aspect ratio set to 1.0f for square
+
+  spinnerParams.initialAngle -= spinnerParams.speed;
+  if (spinnerParams.initialAngle >= 2 * M_PI) {
+    spinnerParams.initialAngle = 0;
+  }
+}
 
 void draw(AppContext &context) {
   GLenum err = glGetError();
@@ -625,7 +758,11 @@ void draw(AppContext &context) {
     }
     renderStepFile(context);
     break;
-  default:
+  case RenderingMode::DrawLoadingScreen: {
+    clearCanvas(Colors::Platinum);
+    drawLoadingScreen(context, context.spinnerParams);
     break;
+  }
+  default: break;
   }
 }
