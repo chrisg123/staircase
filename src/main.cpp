@@ -28,8 +28,8 @@
 using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
-const int AIS_WIREFRAME_MODE = 0;
-const int AIS_SHADED_MODE = 1;
+int const AIS_WIREFRAME_MODE = 0;
+int const AIS_SHADED_MODE = 1;
 
 namespace MessageType {
 enum Type {
@@ -311,7 +311,8 @@ int main() {
   context.pushMessage({MessageType::DrawCheckerboard, std::any{}, nullptr});
 
   std::thread([&]() {
-    // Delay the STEP file loading to briefly show the initial checkerboard state.
+    // Delay the STEP file loading to briefly show the initial checkerboard
+    // state.
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     context.pushMessage(
         {MessageType::ReadStepFile, std::any{embeddedStepFile}, nullptr});
