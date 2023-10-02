@@ -28,6 +28,9 @@
 using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
+const int AIS_WIREFRAME_MODE = 0;
+const int AIS_SHADED_MODE = 1;
+
 namespace MessageType {
 enum Type {
   SetVersionString,
@@ -587,6 +590,7 @@ void renderStepFile(AppContext &context) {
       Timer timer = Timer("Populate aisContext with shapes;");
       for (auto const &shape : shapes) {
         Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+        aisContext->SetDisplayMode(aisShape, AIS_SHADED_MODE, Standard_True);
         aisContext->Display(aisShape, Standard_True);
       }
     }
