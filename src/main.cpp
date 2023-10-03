@@ -1,4 +1,5 @@
 #include "EmbeddedStepFile.h"
+#include "EmbeddedStepFile.hpp"
 #include <AIS_InteractiveContext.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <GLES2/gl2.h>

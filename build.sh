@@ -117,7 +117,7 @@ if [ ! -f "${target_step_file}" ]; then
     fi
 fi
 
-resource_header="${script_dir}/src/EmbeddedStepFile.h"
+resource_header="${script_dir}/src/EmbeddedStepFile.hpp"
 
 step_content="nullptr"
 
