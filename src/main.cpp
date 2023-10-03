@@ -1,4 +1,5 @@
-#include "EmbeddedStepFile.h"
+#include "staircase.hpp"
+#include "AppContext.hpp"
 #include "EmbeddedStepFile.hpp"
 #include <AIS_InteractiveContext.hxx>
 #include <Aspect_DisplayConnection.hxx>
@@ -13,14 +14,12 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <iostream>
-#include <mutex>
 #include <opencascade/AIS_Shape.hxx>
 #include <opencascade/STEPCAFControl_Reader.hxx>
 #include <opencascade/Standard_Version.hxx>
 #include <opencascade/TDF_ChildIterator.hxx>
 #include <opencascade/TDataStd_Name.hxx>
 #include <opencascade/TDocStd_Document.hxx>
-#include <opencascade/XCAFApp_Application.hxx>
 #include <opencascade/XCAFDoc_ShapeTool.hxx>
 #include <optional>
 #include <queue>
@@ -28,133 +27,6 @@
 
 using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
-
-int const AIS_WIREFRAME_MODE = 0;
-int const AIS_SHADED_MODE = 1;
-
-namespace MessageType {
-enum Type {
-  SetVersionString,
-  ClearScreen,
-  DrawCheckerboard,
-  DrawLoadingScreen,
-  ReadStepFile,
-  RenderStepFile
-};
-
-static char const *toString(Type type) {
-  switch (type) {
-  case SetVersionString: return "SetVersionString";
-  case ClearScreen: return "ClearScreen";
-  case DrawCheckerboard: return "DrawCheckerboard";
-  case DrawLoadingScreen: return "DrawLoadingScreen";
-  case ReadStepFile: return "ReadStepFile";
-  case RenderStepFile: return "RenderStepFile";
-  default: return "Unknown";
-  }
-}
-} // namespace MessageType
-
-struct RGB {
-  float r, g, b;
-};
-
-namespace Colors {
-// clang-format off
-const RGB Red      = {1.0f, 0.0f, 0.0f};
-const RGB Green    = {0.0f, 1.0f, 0.0f};
-const RGB Blue     = {0.0f, 0.0f, 1.0f};
-const RGB White    = {1.0f, 1.0f, 1.0f};
-const RGB Black    = {0.0f, 0.0f, 0.0f};
-const RGB Gray     = {0.5f, 0.5f, 0.5f};
-const RGB Platinum = {0.9f, 0.9f, 0.9f};
-// clang-format on
-} // namespace Colors
-
-struct SpinnerParams {
-  // clang-format off
-  float radius        = 15.0f;
-  float lineThickness = 2.0f;
-  float speed         = 0.1f;
-  float initialAngle  = 0.0f;
-  RGB color           = Colors::Gray;
-  // clang-format on
-};
-
-enum class RenderingMode {
-  None,
-  ClearScreen,
-  DrawCheckerboard,
-  DrawLoadingScreen,
-  RenderStepFile
-};
-
-namespace Staircase {
-struct Message {
-  MessageType::Type type;
-  std::any data;
-  std::function<void()> callback;
-};
-} // namespace Staircase
-
-class AppContext {
-public:
-  AppContext() { app = XCAFApp_Application::GetApplication(); }
-
-  Handle(XCAFApp_Application) getApp() const { return app; }
-
-  void pushMessage(Staircase::Message const &msg) {
-    std::lock_guard<std::mutex> lock(queueMutex);
-    messageQueue.push(msg);
-  }
-
-  std::queue<Staircase::Message> drainMessageQueue() {
-    std::lock_guard<std::mutex> lock(queueMutex);
-    std::queue<Staircase::Message> localQueue;
-    std::swap(localQueue, messageQueue);
-    return localQueue;
-  }
-  RenderingMode renderingMode = RenderingMode::None;
-  DocHandle currentlyViewingDoc;
-
-  GLuint shaderProgram;
-  GLint canvasWidth = 0;
-  GLint canvasHeight = 0;
-
-  Handle(V3d_Viewer) viewer;
-  Handle(AIS_InteractiveContext) viewerContext;
-  Handle(V3d_View) view;
-  Handle(AIS_InteractiveContext) aisContext;
-
-  bool stepFileLoaded = false;
-  bool occtComponentsInitialized = false;
-  bool shouldRotate = true;
-  SpinnerParams spinnerParams;
-  std::string canvasId;
-
-private:
-  Handle(XCAFApp_Application) app;
-  std::queue<Staircase::Message> messageQueue;
-  std::mutex queueMutex;
-};
-class Timer {
-public:
-  Timer(std::string const &timerName)
-      : name(timerName), start(std::chrono::high_resolution_clock::now()) {}
-
-  ~Timer() {
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::microseconds>(end - start)
-            .count();
-    double seconds = static_cast<double>(duration) / 1e6;
-    std::cout << "[TIMER] " << seconds << "s:" << name << std::endl;
-  }
-
-private:
-  std::string name;
-  std::chrono::time_point<std::chrono::high_resolution_clock> start;
-};
 
 bool arePthreadsEnabled();
 void createCanvas(std::string containerId, std::string canvasId);
