@@ -358,14 +358,6 @@ std::optional<DocHandle> readInto(std::function<DocHandle()> aNewDoc,
   return aDoc;
 }
 
-bool arePthreadsEnabled() {
-#ifdef __EMSCRIPTEN_PTHREADS__
-  return true;
-#else
-  return false;
-#endif
-}
-
 /**
  * Recursively prints the hierarchy of labels from a TDF_Label tree.
  *

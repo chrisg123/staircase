@@ -5,8 +5,14 @@
 #include <GLES2/gl2.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
+bool arePthreadsEnabled() {
+#ifdef __EMSCRIPTEN_PTHREADS__
+  return true;
+#else
+  return false;
+#endif
+}
 void main_loop(void *arg);
-bool arePthreadsEnabled();
 void createCanvas(std::string containerId, std::string canvasId);
 void setupWebGLContext(std::string const &canvasId);
 void initializeOcctComponents(AppContext &context);
