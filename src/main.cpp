@@ -79,20 +79,15 @@ int main() {
   return 0;
 }
 
-void main_loop(void *arg) {
-
-  AppContext *context = static_cast<AppContext *>(arg);
-
-  auto localQueue = context->drainMessageQueue();
-
-  while (!localQueue.empty()) {
-    auto message = localQueue.front();
-    localQueue.pop();
+void handleMessages(AppContext &context, std::queue<Staircase::Message> messageQueue) {
+  while (!messageQueue.empty()) {
+    auto message = messageQueue.front();
+    messageQueue.pop();
     std::cout << "[RCV] " << MessageType::toString(message.type) << std::endl;
 
     switch (message.type) {
     case MessageType::ClearScreen:
-      context->renderingMode = RenderingMode::None;
+      context.renderingMode = RenderingMode::None;
       clearCanvas(Colors::Black);
       break;
     case MessageType::SetVersionString:
@@ -101,22 +96,22 @@ void main_loop(void *arg) {
           std::any_cast<std::string>(message.data).c_str());
       break;
     case MessageType::DrawCheckerboard:
-      context->renderingMode = RenderingMode::DrawCheckerboard;
+      context.renderingMode = RenderingMode::DrawCheckerboard;
       break;
     case MessageType::DrawLoadingScreen:
-      context->renderingMode = RenderingMode::DrawLoadingScreen;
+      context.renderingMode = RenderingMode::DrawLoadingScreen;
       break;
     case MessageType::ReadStepFile: {
       std::string stepFileStr =
           std::any_cast<std::string>(message.data).c_str();
-      context->renderingMode = RenderingMode::DrawLoadingScreen;
+      context.renderingMode = RenderingMode::DrawLoadingScreen;
       EM_ASM(
           { document.getElementById('stepText').innerHTML = UTF8ToString($0); },
           stepFileStr.c_str());
 
-      std::thread([&, context]() {
+      std::thread([&context, stepFileStr]() {
         readStepFile(
-            *context, stepFileStr, [context](std::optional<DocHandle> docOpt) {
+            context, stepFileStr, [&context](std::optional<DocHandle> docOpt) {
               if (!docOpt.has_value()) {
                 std::cerr << "Failed to read STEP file: DocHandle is empty"
                           << std::endl;
@@ -125,26 +120,33 @@ void main_loop(void *arg) {
 
               Staircase::Message msg;
               msg.type = MessageType::ClearScreen;
-              msg.callback = [docOpt, context]() {
-                context->pushMessage(Staircase::Message{
+              msg.callback = [docOpt, &context]() {
+                context.pushMessage(Staircase::Message{
                     MessageType::RenderStepFile, docOpt.value(), nullptr});
               };
 
-              context->pushMessage(msg);
+              context.pushMessage(msg);
             });
       }).detach();
       break;
     }
     case MessageType::RenderStepFile:
       DocHandle aDoc = std::any_cast<DocHandle>(message.data);
-      context->currentlyViewingDoc = aDoc;
-      context->renderingMode = RenderingMode::RenderStepFile;
+      context.currentlyViewingDoc = aDoc;
+      context.renderingMode = RenderingMode::RenderStepFile;
       printLabels(aDoc->Main());
       break;
     }
 
     if (message.callback != nullptr) { message.callback(); }
   }
+}
+
+void main_loop(void *arg) {
+
+  AppContext *context = static_cast<AppContext *>(arg);
+
+  handleMessages(*context, context->drainMessageQueue());
 
   draw(*context);
 }
