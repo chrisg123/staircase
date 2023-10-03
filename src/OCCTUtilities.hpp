@@ -1,0 +1,22 @@
+#include "AppContext.hpp"
+#include "staircase.hpp"
+void initializeOcctComponents(AppContext &context);
+
+std::optional<Handle(TDocStd_Document)>
+readInto(std::function<Handle(TDocStd_Document)()> aNewDoc,
+         std::istream &fromStream);
+
+/**
+ * Recursively prints the hierarchy of labels from a TDF_Label tree.
+ *
+ * @param label The root label to start the traversal from.
+ * @param level Indentation level for better readability (default is 0).
+ */
+void printLabels(TDF_Label const &label, int level);
+
+void readStepFile(
+    AppContext &context, std::string stepFileStr,
+    std::function<void(std::optional<Handle(TDocStd_Document)>)>
+        callback);
+
+std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document) const aDoc);

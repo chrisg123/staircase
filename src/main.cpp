@@ -1,14 +1,14 @@
-#include "staircase.hpp"
-#include "AppContext.hpp"
 #include "main.hpp"
+#include "AppContext.hpp"
 #include "EmbeddedStepFile.hpp"
+#include "OCCTUtilities.hpp"
+#include "staircase.hpp"
 #include <AIS_InteractiveContext.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <GLES2/gl2.h>
 #include <OpenGl_GraphicDriver.hxx>
 #include <V3d_View.hxx>
 #include <Wasm_Window.hxx>
-#include <XCAFDoc_DocumentTool.hxx>
 #include <algorithm>
 #include <any>
 #include <chrono>
@@ -16,12 +16,9 @@
 #include <emscripten/html5.h>
 #include <iostream>
 #include <opencascade/AIS_Shape.hxx>
-#include <opencascade/STEPCAFControl_Reader.hxx>
 #include <opencascade/Standard_Version.hxx>
 #include <opencascade/TDF_ChildIterator.hxx>
 #include <opencascade/TDataStd_Name.hxx>
-#include <opencascade/TDocStd_Document.hxx>
-#include <opencascade/XCAFDoc_ShapeTool.hxx>
 #include <optional>
 #include <queue>
 #include <thread>
@@ -200,152 +197,6 @@ void initializeUserInteractions(AppContext &context) {
                                     toUseCapture, onMouseCallback);
 }
 
-void initializeOcctComponents(AppContext &context) {
-
-  float myDevicePixelRatio = emscripten_get_device_pixel_ratio();
-  Handle(Aspect_DisplayConnection) aDisp;
-  Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
-  aDriver->ChangeOptions().buffersNoSwap = true;
-  aDriver->ChangeOptions().buffersOpaqueAlpha = true;
-
-  if (!aDriver->InitContext()) {
-    std::cerr << "Error: EGL initialization failed" << std::endl;
-    return;
-  }
-
-  Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
-  aViewer->SetComputedMode(false);
-  aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
-  aViewer->SetDefaultLights();
-  aViewer->SetLightOn();
-  for (V3d_ListOfLight::Iterator aLightIter(aViewer->ActiveLights());
-       aLightIter.More(); aLightIter.Next()) {
-    const Handle(V3d_Light) &aLight = aLightIter.Value();
-    if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional) {
-      aLight->SetCastShadows(true);
-    }
-  }
-
-  Handle(Wasm_Window) aWindow = new Wasm_Window(context.canvasId.c_str());
-  aWindow->Size(context.canvasWidth, context.canvasHeight);
-
-  Handle(Prs3d_TextAspect) myTextStyle = new Prs3d_TextAspect();
-  myTextStyle->SetFont(Font_NOF_ASCII_MONO);
-  myTextStyle->SetHeight(12);
-  myTextStyle->Aspect()->SetColor(Quantity_NOC_GRAY95);
-  myTextStyle->Aspect()->SetColorSubTitle(Quantity_NOC_BLACK);
-  myTextStyle->Aspect()->SetDisplayType(Aspect_TODT_SHADOW);
-  myTextStyle->Aspect()->SetTextFontAspect(Font_FA_Bold);
-  myTextStyle->Aspect()->SetTextZoomable(false);
-  myTextStyle->SetHorizontalJustification(Graphic3d_HTA_LEFT);
-  myTextStyle->SetVerticalJustification(Graphic3d_VTA_BOTTOM);
-
-  Handle(V3d_View) aView = aViewer->CreateView();
-  aView->Camera()->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
-  aView->SetImmediateUpdate(false);
-  aView->ChangeRenderingParams().IsShadowEnabled = false;
-  aView->ChangeRenderingParams().Resolution =
-      (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
-  aView->ChangeRenderingParams().ToShowStats = true;
-  aView->ChangeRenderingParams().StatsTextAspect = myTextStyle->Aspect();
-  aView->ChangeRenderingParams().StatsTextHeight = (int)myTextStyle->Height();
-  aView->SetWindow(aWindow);
-
-  Handle(AIS_InteractiveContext) aContext = new AIS_InteractiveContext(aViewer);
-
-  context.view = aView;
-  context.viewer = aViewer;
-  context.aisContext = aContext;
-}
-
-std::optional<DocHandle> readInto(std::function<DocHandle()> aNewDoc,
-                                  std::istream &fromStream) {
-
-  DocHandle aDoc = aNewDoc();
-  STEPCAFControl_Reader aStepReader;
-
-  IFSelect_ReturnStatus aStatus =
-      aStepReader.ReadStream("Embedded STEP Data", fromStream);
-
-  if (aStatus != IFSelect_RetDone) {
-    std::cerr << "Error reading STEP file." << std::endl;
-    return std::nullopt;
-  }
-
-  bool success = aStepReader.Transfer(aDoc);
-
-  if (!success) {
-    std::cerr << "Transfer failed." << std::endl;
-    return std::nullopt;
-  }
-
-  return aDoc;
-}
-
-/**
- * Recursively prints the hierarchy of labels from a TDF_Label tree.
- *
- * @param label The root label to start the traversal from.
- * @param level Indentation level for better readability (default is 0).
- */
-void printLabels(TDF_Label const &label, int level) {
-  for (int i = 0; i < level; ++i) {
-    std::cout << "  ";
-  }
-
-  Handle(TDataStd_Name) name;
-  if (label.FindAttribute(TDataStd_Name::GetID(), name)) {
-    TCollection_ExtendedString nameStr = name->Get();
-    std::cout << "Label: " << nameStr;
-  } else {
-    std::cout << "Unnamed Label";
-  }
-  std::cout << std::endl;
-
-  for (TDF_ChildIterator it(label); it.More(); it.Next()) {
-    printLabels(it.Value(), level + 1);
-  }
-}
-
-void readStepFile(AppContext &context, std::string stepFileStr,
-                  CallbackType callback) {
-
-  auto aNewDoc = [&]() -> DocHandle {
-    Handle(TDocStd_Document) aDoc;
-    context.getApp()->NewDocument("MDTV-XCAF", aDoc);
-    return aDoc;
-  };
-
-  std::istringstream fromStream(stepFileStr);
-
-  std::optional<DocHandle> docOpt;
-  {
-    Timer timer = Timer("readInto(aNewDoc, fromStream)");
-    docOpt = readInto(aNewDoc, fromStream);
-  }
-
-  callback(docOpt);
-}
-
-std::vector<TopoDS_Shape> getShapesFromDoc(DocHandle const aDoc) {
-  std::vector<TopoDS_Shape> shapes;
-
-  TDF_Label mainLabel = aDoc->Main();
-  Handle(XCAFDoc_ShapeTool) shapeTool =
-      XCAFDoc_DocumentTool::ShapeTool(mainLabel);
-  for (TDF_ChildIterator it(mainLabel, Standard_True); it.More(); it.Next()) {
-    TDF_Label label = it.Value();
-    if (!shapeTool->IsShape(label)) { continue; }
-    TopoDS_Shape shape;
-    if (!shapeTool->GetShape(label, shape) || shape.IsNull()) {
-      std::cerr << "Failed to get shape from label." << std::endl;
-      continue;
-    }
-    shapes.push_back(shape);
-  }
-  return shapes;
-}
-
 void renderStepFile(AppContext &context) {
   DocHandle aDoc = context.currentlyViewingDoc;
   Handle(AIS_InteractiveContext) aisContext = context.aisContext;
@@ -379,7 +230,6 @@ void renderStepFile(AppContext &context) {
     aView->Redraw();
   }
 }
-
 
 void draw(AppContext &context) {
   GLenum err = glGetError();

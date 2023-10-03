@@ -18,6 +18,7 @@ link_directories(${EMSDK_SYSROOT}/lib)
 set(SOURCE_FILES
   ${SRC_DIR}/main.cpp
   ${SRC_DIR}/GraphicsUtilities.cpp
+  ${SRC_DIR}/OCCTUtilities.cpp
 )
 
 add_executable(staircase ${SOURCE_FILES})
