@@ -29,6 +29,59 @@
 using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
+int main() {
+  AppContext context;
+  std::string occt_ver_str =
+      "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
+  std::cout << occt_ver_str << std::endl;
+
+  if (!arePthreadsEnabled()) {
+    std::cerr << "Pthreads are required." << std::endl;
+    return 1;
+  }
+  std::cout << "Pthreads enabled" << std::endl;
+
+  std::string containerId = "staircase-container";
+  context.canvasId = "staircase-canvas";
+
+  createCanvas(containerId, context.canvasId);
+  initializeUserInteractions(context);
+  setupWebGLContext(context.canvasId);
+  setupViewport(context);
+
+  std::cout << "Canvas size: " << context.canvasWidth << "x"
+            << context.canvasHeight << std::endl;
+
+  context.shaderProgram = createShaderProgram(
+      /*vertexShaderSource=*/
+      "attribute vec3 position;"
+      "void main() {"
+      "  gl_Position  = vec4(position, 1.0);"
+      "}",
+      /*fragmentShaderSource=*/
+      "precision mediump float;"
+      "uniform vec4 color;"
+      "void main() {"
+      "  gl_FragColor = color;"
+      "}");
+
+  context.pushMessage(
+      {MessageType::SetVersionString, std::any{occt_ver_str}, nullptr});
+  context.pushMessage({MessageType::DrawCheckerboard, std::any{}, nullptr});
+
+  std::thread([&]() {
+    // Delay the STEP file loading to briefly show the initial checkerboard
+    // state.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    context.pushMessage(
+        {MessageType::ReadStepFile, std::any{embeddedStepFile}, nullptr});
+  }).detach();
+
+  emscripten_set_main_loop_arg(main_loop, &context, 0, 1);
+
+  return 0;
+}
+
 void main_loop(void *arg) {
 
   AppContext *context = static_cast<AppContext *>(arg);
@@ -99,58 +152,6 @@ void main_loop(void *arg) {
   draw(*context);
 }
 
-int main() {
-  AppContext context;
-  std::string occt_ver_str =
-      "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
-  std::cout << occt_ver_str << std::endl;
-
-  if (!arePthreadsEnabled()) {
-    std::cerr << "Pthreads are required." << std::endl;
-    return 1;
-  }
-  std::cout << "Pthreads enabled" << std::endl;
-
-  std::string containerId = "staircase-container";
-  context.canvasId = "staircase-canvas";
-
-  createCanvas(containerId, context.canvasId);
-  initializeUserInteractions(context);
-  setupWebGLContext(context.canvasId);
-  setupViewport(context);
-
-  std::cout << "Canvas size: " << context.canvasWidth << "x"
-            << context.canvasHeight << std::endl;
-
-  context.shaderProgram = createShaderProgram(
-      /*vertexShaderSource=*/
-      "attribute vec3 position;"
-      "void main() {"
-      "  gl_Position  = vec4(position, 1.0);"
-      "}",
-      /*fragmentShaderSource=*/
-      "precision mediump float;"
-      "uniform vec4 color;"
-      "void main() {"
-      "  gl_FragColor = color;"
-      "}");
-
-  context.pushMessage(
-      {MessageType::SetVersionString, std::any{occt_ver_str}, nullptr});
-  context.pushMessage({MessageType::DrawCheckerboard, std::any{}, nullptr});
-
-  std::thread([&]() {
-    // Delay the STEP file loading to briefly show the initial checkerboard
-    // state.
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    context.pushMessage(
-        {MessageType::ReadStepFile, std::any{embeddedStepFile}, nullptr});
-  }).detach();
-
-  emscripten_set_main_loop_arg(main_loop, &context, 0, 1);
-
-  return 0;
-}
 
 void clearCanvas(RGB color) {
   glClearColor(color.r, color.g, color.b, 1.0f);
