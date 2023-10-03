@@ -1,5 +1,6 @@
 #include "staircase.hpp"
 #include "AppContext.hpp"
+#include "main.hpp"
 #include "EmbeddedStepFile.hpp"
 #include <AIS_InteractiveContext.hxx>
 #include <Aspect_DisplayConnection.hxx>
@@ -27,28 +28,6 @@
 
 using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
-
-bool arePthreadsEnabled();
-void createCanvas(std::string containerId, std::string canvasId);
-void setupWebGLContext(std::string const &canvasId);
-void initializeOcctComponents(AppContext &context);
-void setupViewport(AppContext &context);
-void compileShader(GLuint &shader, char const *source, GLenum type);
-GLuint linkProgram(GLuint vertexShader, GLuint fragmentShader);
-GLuint createShaderProgram(char const *vertexShaderSource,
-                           char const *fragmentShaderSource);
-void printLabels(TDF_Label const &label, int level = 0);
-std::optional<DocHandle> readInto(std::function<DocHandle()> aNewDoc,
-                                  std::istream &fromStream);
-void readStepFile(AppContext &context, std::string stepFileStr,
-                  CallbackType callback);
-void renderStepFile(AppContext &context, DocHandle &aDoc);
-void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
-                GLfloat r, GLfloat g, GLfloat b, float aspectRatio);
-void draw(AppContext &context);
-void drawCheckerBoard(AppContext &context);
-void drawLoadingScreen(AppContext &context, SpinnerParams &spinnerParams);
-void clearCanvas(RGB color);
 
 EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
                         void *userData) {
