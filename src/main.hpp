@@ -3,6 +3,9 @@
 #include "staircase.hpp"
 #include "AppContext.hpp"
 #include <GLES2/gl2.h>
+#include <emscripten.h>
+#include <emscripten/html5.h>
+void main_loop(void *arg);
 bool arePthreadsEnabled();
 void createCanvas(std::string containerId, std::string canvasId);
 void setupWebGLContext(std::string const &canvasId);
@@ -24,4 +27,7 @@ void draw(AppContext &context);
 void drawCheckerBoard(AppContext &context);
 void drawLoadingScreen(AppContext &context, SpinnerParams &spinnerParams);
 void clearCanvas(RGB color);
+EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
+                        void *userData);
+void initializeUserInteractions(AppContext &context);
 #endif

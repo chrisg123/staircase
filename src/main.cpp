@@ -29,29 +29,6 @@
 using DocHandle = Handle(TDocStd_Document);
 using CallbackType = std::function<void(std::optional<DocHandle>)>;
 
-EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
-                        void *userData) {
-  AppContext *context = static_cast<AppContext *>(userData);
-
-  switch (eventType) {
-  case EMSCRIPTEN_EVENT_MOUSEDOWN:
-    std::cout << "[EVT] EMSCRIPTEN_EVENT_MOUSEDOWN" << std::endl;
-    context->shouldRotate = !context->shouldRotate;
-    break;
-  default:
-    std::cout << "Unhandled mouse event type: " << eventType << std::endl;
-    break;
-  }
-  return EM_TRUE;
-}
-
-void initializeUserInteractions(AppContext &context) {
-  const EM_BOOL toUseCapture = EM_TRUE;
-
-  emscripten_set_mousedown_callback(("#" + context.canvasId).c_str(), &context,
-                                    toUseCapture, onMouseCallback);
-}
-
 void main_loop(void *arg) {
 
   AppContext *context = static_cast<AppContext *>(arg);
@@ -204,6 +181,30 @@ void createCanvas(std::string containerId, std::string canvasId) {
       },
       containerId.c_str(), canvasId.c_str());
 }
+
+EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
+                        void *userData) {
+  AppContext *context = static_cast<AppContext *>(userData);
+
+  switch (eventType) {
+  case EMSCRIPTEN_EVENT_MOUSEDOWN:
+    std::cout << "[EVT] EMSCRIPTEN_EVENT_MOUSEDOWN" << std::endl;
+    context->shouldRotate = !context->shouldRotate;
+    break;
+  default:
+    std::cout << "Unhandled mouse event type: " << eventType << std::endl;
+    break;
+  }
+  return EM_TRUE;
+}
+
+void initializeUserInteractions(AppContext &context) {
+  const EM_BOOL toUseCapture = EM_TRUE;
+
+  emscripten_set_mousedown_callback(("#" + context.canvasId).c_str(), &context,
+                                    toUseCapture, onMouseCallback);
+}
+
 
 void setupWebGLContext(std::string const &canvasId) {
   EmscriptenWebGLContextAttributes attrs;
