@@ -15,7 +15,11 @@ include_directories(${EMSDK_SYSROOT}/include
 
 link_directories(${EMSDK_SYSROOT}/lib)
 
-add_executable(staircase ${SRC_DIR}/main.cpp)
+set(SOURCE_FILES
+  ${SRC_DIR}/main.cpp
+)
+
+add_executable(staircase ${SOURCE_FILES})
 
 target_link_libraries(
   staircase
