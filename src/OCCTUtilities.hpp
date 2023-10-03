@@ -1,3 +1,5 @@
+#ifndef OCCTUTILITIES_HPP
+#define OCCTUTILITIES_HPP
 #include "AppContext.hpp"
 #include "staircase.hpp"
 void initializeOcctComponents(AppContext &context);
@@ -12,7 +14,7 @@ readInto(std::function<Handle(TDocStd_Document)()> aNewDoc,
  * @param label The root label to start the traversal from.
  * @param level Indentation level for better readability (default is 0).
  */
-void printLabels(TDF_Label const &label, int level);
+void printLabels(TDF_Label const &label, int level = 0);
 
 void readStepFile(
     AppContext &context, std::string stepFileStr,
@@ -20,3 +22,5 @@ void readStepFile(
         callback);
 
 std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document) const aDoc);
+void renderStepFile(AppContext &context);
+#endif

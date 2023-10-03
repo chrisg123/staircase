@@ -1,30 +1,34 @@
-#include "main.hpp"
 #include "AppContext.hpp"
 #include "EmbeddedStepFile.hpp"
+#include "GraphicsUtilities.hpp"
 #include "OCCTUtilities.hpp"
 #include "staircase.hpp"
-#include <AIS_InteractiveContext.hxx>
-#include <Aspect_DisplayConnection.hxx>
-#include <GLES2/gl2.h>
-#include <OpenGl_GraphicDriver.hxx>
-#include <V3d_View.hxx>
-#include <Wasm_Window.hxx>
-#include <algorithm>
 #include <any>
 #include <chrono>
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <iostream>
-#include <opencascade/AIS_Shape.hxx>
 #include <opencascade/Standard_Version.hxx>
-#include <opencascade/TDF_ChildIterator.hxx>
-#include <opencascade/TDataStd_Name.hxx>
 #include <optional>
 #include <queue>
 #include <thread>
 
+bool arePthreadsEnabled() {
+#ifdef __EMSCRIPTEN_PTHREADS__
+  return true;
+#else
+  return false;
+#endif
+}
 using DocHandle = Handle(TDocStd_Document);
-using CallbackType = std::function<void(std::optional<DocHandle>)>;
+void main_loop(void *arg);
+void handleMessages(AppContext &context,
+                    std::queue<Staircase::Message> messageQueue);
+void draw(AppContext &context);
+EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
+                        void *userData);
+void initializeUserInteractions(AppContext &context);
+
 
 int main() {
   AppContext context;
@@ -79,7 +83,17 @@ int main() {
   return 0;
 }
 
-void handleMessages(AppContext &context, std::queue<Staircase::Message> messageQueue) {
+void main_loop(void *arg) {
+
+  AppContext *context = static_cast<AppContext *>(arg);
+
+  handleMessages(*context, context->drainMessageQueue());
+
+  draw(*context);
+}
+
+void handleMessages(AppContext &context,
+                    std::queue<Staircase::Message> messageQueue) {
   while (!messageQueue.empty()) {
     auto message = messageQueue.front();
     messageQueue.pop();
@@ -142,97 +156,6 @@ void handleMessages(AppContext &context, std::queue<Staircase::Message> messageQ
   }
 }
 
-void main_loop(void *arg) {
-
-  AppContext *context = static_cast<AppContext *>(arg);
-
-  handleMessages(*context, context->drainMessageQueue());
-
-  draw(*context);
-}
-
-void createCanvas(std::string containerId, std::string canvasId) {
-  EM_ASM(
-      {
-        var divElement = document.getElementById(UTF8ToString($0));
-
-        if (divElement) {
-          var canvas = document.createElement('canvas');
-          canvas.id = UTF8ToString($1);
-          divElement.appendChild(canvas);
-
-          // Align canvas size with device pixels
-          var computedStyle = window.getComputedStyle(canvas);
-          var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10);
-          var cssHeight =
-              parseInt(computedStyle.getPropertyValue('height'), 10);
-          var devicePixelRatio = window.devicePixelRatio || 1;
-          canvas.width = cssWidth * devicePixelRatio;
-          canvas.height = cssHeight * devicePixelRatio;
-        }
-        // Set the canvas to emscripten Module object
-        Module['canvas'] = canvas;
-      },
-      containerId.c_str(), canvasId.c_str());
-}
-
-EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
-                        void *userData) {
-  AppContext *context = static_cast<AppContext *>(userData);
-
-  switch (eventType) {
-  case EMSCRIPTEN_EVENT_MOUSEDOWN:
-    std::cout << "[EVT] EMSCRIPTEN_EVENT_MOUSEDOWN" << std::endl;
-    context->shouldRotate = !context->shouldRotate;
-    break;
-  default:
-    std::cout << "Unhandled mouse event type: " << eventType << std::endl;
-    break;
-  }
-  return EM_TRUE;
-}
-
-void initializeUserInteractions(AppContext &context) {
-  const EM_BOOL toUseCapture = EM_TRUE;
-
-  emscripten_set_mousedown_callback(("#" + context.canvasId).c_str(), &context,
-                                    toUseCapture, onMouseCallback);
-}
-
-void renderStepFile(AppContext &context) {
-  DocHandle aDoc = context.currentlyViewingDoc;
-  Handle(AIS_InteractiveContext) aisContext = context.aisContext;
-  Handle(V3d_View) aView = context.view;
-  if (aDoc.IsNull() || context.aisContext.IsNull()) {
-    std::cerr << "No document or AIS context available to render." << std::endl;
-    return;
-  }
-
-  if (!context.stepFileLoaded) {
-    std::vector<TopoDS_Shape> shapes = getShapesFromDoc(aDoc);
-    {
-      Timer timer = Timer("Populate aisContext with shapes;");
-      for (auto const &shape : shapes) {
-        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
-        aisContext->SetDisplayMode(aisShape, AIS_SHADED_MODE, Standard_True);
-        aisContext->Display(aisShape, Standard_True);
-      }
-    }
-
-    context.stepFileLoaded = true;
-  }
-
-  if (context.shouldRotate) {
-    static double angle = 0.0;
-    angle += 0.01;
-    if (angle >= 2 * M_PI) { angle = 0.0; }
-
-    gp_Dir aDir(sin(angle), cos(angle), aView->Camera()->Direction().Z());
-    aView->Camera()->SetDirection(aDir);
-    aView->Redraw();
-  }
-}
-
 void draw(AppContext &context) {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
@@ -259,4 +182,27 @@ void draw(AppContext &context) {
   }
   default: break;
   }
+}
+
+EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
+                        void *userData) {
+  AppContext *context = static_cast<AppContext *>(userData);
+
+  switch (eventType) {
+  case EMSCRIPTEN_EVENT_MOUSEDOWN:
+    std::cout << "[EVT] EMSCRIPTEN_EVENT_MOUSEDOWN" << std::endl;
+    context->shouldRotate = !context->shouldRotate;
+    break;
+  default:
+    std::cout << "Unhandled mouse event type: " << eventType << std::endl;
+    break;
+  }
+  return EM_TRUE;
+}
+
+void initializeUserInteractions(AppContext &context) {
+  const EM_BOOL toUseCapture = EM_TRUE;
+
+  emscripten_set_mousedown_callback(("#" + context.canvasId).c_str(), &context,
+                                    toUseCapture, onMouseCallback);
 }

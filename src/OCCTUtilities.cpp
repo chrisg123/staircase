@@ -9,6 +9,7 @@
 #include <opencascade/TDocStd_Document.hxx>
 #include <opencascade/XCAFDoc_ShapeTool.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
+#include <opencascade/AIS_Shape.hxx>
 
 void initializeOcctComponents(AppContext &context) {
 
@@ -150,4 +151,38 @@ std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document) const aDoc) 
     shapes.push_back(shape);
   }
   return shapes;
+}
+
+void renderStepFile(AppContext &context) {
+  Handle(TDocStd_Document) aDoc = context.currentlyViewingDoc;
+  Handle(AIS_InteractiveContext) aisContext = context.aisContext;
+  Handle(V3d_View) aView = context.view;
+  if (aDoc.IsNull() || context.aisContext.IsNull()) {
+    std::cerr << "No document or AIS context available to render." << std::endl;
+    return;
+  }
+
+  if (!context.stepFileLoaded) {
+    std::vector<TopoDS_Shape> shapes = getShapesFromDoc(aDoc);
+    {
+      Timer timer = Timer("Populate aisContext with shapes;");
+      for (auto const &shape : shapes) {
+        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+        aisContext->SetDisplayMode(aisShape, AIS_SHADED_MODE, Standard_True);
+        aisContext->Display(aisShape, Standard_True);
+      }
+    }
+
+    context.stepFileLoaded = true;
+  }
+
+  if (context.shouldRotate) {
+    static double angle = 0.0;
+    angle += 0.01;
+    if (angle >= 2 * M_PI) { angle = 0.0; }
+
+    gp_Dir aDir(sin(angle), cos(angle), aView->Camera()->Direction().Z());
+    aView->Camera()->SetDirection(aDir);
+    aView->Redraw();
+  }
 }
