@@ -20,6 +20,32 @@ variables.
     the code may lack clarity or the class may be carrying too much state or
     responsibility.
 
+## Modifier Placement
+
+### `const` Modifier
+
+This project prefers the `const` modifier to be placed on the right side of the
+type.
+
+#### Rationale
+
+- Facilitates a right-to-left reading of the type (e.g. "reference to a const
+  string")
+
+#### Example
+
+Preferred:
+
+```cpp
+std::string const &myString;
+```
+
+Not preferred:
+
+```cpp
+const std::string &myString;
+```
+
 #### Supporting References
 
 -   [Stack Overflow Discussion](https://stackoverflow.com/a/1228719/2974621)
