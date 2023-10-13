@@ -30,8 +30,7 @@ static char const *toString(Type type) {
 namespace Staircase {
 struct Message {
   MessageType::Type type;
-  std::any data;
-  std::function<void()> callback;
+  std::shared_ptr<Message> nextMessage;
 };
 } // namespace Staircase
 

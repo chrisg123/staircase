@@ -7,6 +7,7 @@
 #include <chrono>
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include <emscripten/threading.h>
 #include <iostream>
 #include <opencascade/Standard_Version.hxx>
 #include <optional>
@@ -22,19 +23,27 @@ bool arePthreadsEnabled() {
 }
 using DocHandle = Handle(TDocStd_Document);
 void main_loop(void *arg);
-void handleMessages(AppContext &context,
-                    std::queue<Staircase::Message> messageQueue);
+
+void handleMessages(void *arg);
+
 void draw(AppContext &context);
 EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
                         void *userData);
 void initializeUserInteractions(AppContext &context);
 
+void bootstrap(void *arg);
+void *loadStepFile(void *arg);
 
-int main() {
-  AppContext context;
+extern "C" void dummyMainLoop() { emscripten_cancel_main_loop(); }
+
+EMSCRIPTEN_KEEPALIVE int main() {
+  AppContext *context = new AppContext;
   std::string occt_ver_str =
       "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
   std::cout << occt_ver_str << std::endl;
+
+  EM_ASM({ document.getElementById('version').innerHTML = UTF8ToString($0); },
+         std::any_cast<std::string>(occt_ver_str).c_str());
 
   if (!arePthreadsEnabled()) {
     std::cerr << "Pthreads are required." << std::endl;
@@ -43,17 +52,17 @@ int main() {
   std::cout << "Pthreads enabled" << std::endl;
 
   std::string containerId = "staircase-container";
-  context.canvasId = "staircase-canvas";
+  context->canvasId = "staircase-canvas";
 
-  createCanvas(containerId, context.canvasId);
-  initializeUserInteractions(context);
-  setupWebGLContext(context.canvasId);
-  setupViewport(context);
+  emscripten_set_main_loop(dummyMainLoop, -1, 0);
 
-  std::cout << "Canvas size: " << context.canvasWidth << "x"
-            << context.canvasHeight << std::endl;
+  createCanvas(containerId, context->canvasId);
+  initializeUserInteractions(*context);
+  setupWebGLContext(context->canvasId);
+  setupViewport(*context);
+  initializeOcctComponents(*context);
 
-  context.shaderProgram = createShaderProgram(
+  context->shaderProgram = createShaderProgram(
       /*vertexShaderSource=*/
       "attribute vec3 position;"
       "void main() {"
@@ -66,122 +75,116 @@ int main() {
       "  gl_FragColor = color;"
       "}");
 
-  context.pushMessage(
-      {MessageType::SetVersionString, std::any{occt_ver_str}, nullptr});
-  context.pushMessage({MessageType::DrawCheckerboard, std::any{}, nullptr});
+  EM_ASM(Module['noExitRuntime'] = true);
 
-  std::thread([&]() {
-    // Delay the STEP file loading to briefly show the initial checkerboard
-    // state.
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    context.pushMessage(
-        {MessageType::ReadStepFile, std::any{embeddedStepFile}, nullptr});
-  }).detach();
+  drawCheckerBoard(context->shaderProgram);
 
-  emscripten_set_main_loop_arg(main_loop, &context, 0, 1);
+  int const INITIAL_DELAY_MS = 1000;
+  emscripten_async_call(bootstrap, context, INITIAL_DELAY_MS);
 
   return 0;
 }
 
-void main_loop(void *arg) {
-
-  AppContext *context = static_cast<AppContext *>(arg);
-
-  handleMessages(*context, context->drainMessageQueue());
-
-  draw(*context);
+void bootstrap(void *arg) {
+  auto context = static_cast<AppContext *>(arg);
+  pthread_t worker;
+  pthread_create(&worker, NULL, loadStepFile, context);
 }
 
-void handleMessages(AppContext &context,
-                    std::queue<Staircase::Message> messageQueue) {
-  while (!messageQueue.empty()) {
-    auto message = messageQueue.front();
-    messageQueue.pop();
-    std::cout << "[RCV] " << MessageType::toString(message.type) << std::endl;
+void *loadStepFile(void *arg) {
+  auto context = static_cast<AppContext *>(arg);
+  std::cout << "loadStepFile" << std::endl;
+  std::string stepFileStr = embeddedStepFile;
+
+  Staircase::Message msg;
+  context->showingSpinner = true;
+  msg.type = MessageType::DrawLoadingScreen;
+  context->pushMessage(msg);
+
+  emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
+                                              (void *)context);
+
+  // Read STEP file and handle the result in the callback
+  readStepFile(XCAFApp_Application::GetApplication(), stepFileStr,
+               [&context](std::optional<DocHandle> docOpt) {
+                 if (!docOpt.has_value()) {
+                   std::cerr << "Failed to read STEP file: DocHandle is empty"
+                             << std::endl;
+                   return;
+                 }
+                 auto aDoc = docOpt.value();
+                 printLabels(aDoc->Main());
+                 std::cout << "STEP File Loaded!" << std::endl;
+                 context->showingSpinner = false;
+                 context->currentlyViewingDoc = aDoc;
+
+                 Staircase::Message msg1;
+                 msg1.type = MessageType::ClearScreen;
+
+                 auto msg2 = std::make_shared<Staircase::Message>();
+                 msg2->type = MessageType::RenderStepFile;
+                 msg1.nextMessage = msg2;
+
+                 context->pushMessage(msg1);
+
+                 emscripten_async_run_in_main_runtime_thread(
+                     EM_FUNC_SIG_VI, handleMessages, (void *)context);
+               });
+
+  return NULL;
+}
+
+EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
+  auto context = static_cast<AppContext *>(arg);
+  auto localQueue = context->drainMessageQueue();
+  bool nextFrame = false;
+  int const FPS60 = 1000 / 60;
+
+  while (!localQueue.empty()) {
+    Staircase::Message message = localQueue.front();
+    localQueue.pop();
 
     switch (message.type) {
-    case MessageType::ClearScreen:
-      context.renderingMode = RenderingMode::None;
-      clearCanvas(Colors::Black);
-      break;
-    case MessageType::SetVersionString:
-      EM_ASM(
-          { document.getElementById('version').innerHTML = UTF8ToString($0); },
-          std::any_cast<std::string>(message.data).c_str());
-      break;
-    case MessageType::DrawCheckerboard:
-      context.renderingMode = RenderingMode::DrawCheckerboard;
-      break;
-    case MessageType::DrawLoadingScreen:
-      context.renderingMode = RenderingMode::DrawLoadingScreen;
-      break;
-    case MessageType::ReadStepFile: {
-      std::string stepFileStr =
-          std::any_cast<std::string>(message.data).c_str();
-      context.renderingMode = RenderingMode::DrawLoadingScreen;
-      EM_ASM(
-          { document.getElementById('stepText').innerHTML = UTF8ToString($0); },
-          stepFileStr.c_str());
+    case MessageType::ClearScreen: clearCanvas(Colors::Platinum); break;
+    case MessageType::RenderStepFile: {
+      renderStepFile(*context);
 
-      std::thread([&context, stepFileStr]() {
-        readStepFile(
-            XCAFApp_Application::GetApplication(), stepFileStr, [&context](std::optional<DocHandle> docOpt) {
-              if (!docOpt.has_value()) {
-                std::cerr << "Failed to read STEP file: DocHandle is empty"
-                          << std::endl;
-                return;
-              }
+      Staircase::Message msg1;
+      msg1.type = MessageType::ClearScreen;
+      context->pushMessage(msg1);
 
-              Staircase::Message msg;
-              msg.type = MessageType::ClearScreen;
-              msg.callback = [docOpt, &context]() {
-                context.pushMessage(Staircase::Message{
-                    MessageType::RenderStepFile, docOpt.value(), nullptr});
-              };
+      Staircase::Message msg2;
+      msg2.type = MessageType::RenderStepFile;
+      context->pushMessage(msg2);
 
-              context.pushMessage(msg);
-            });
-      }).detach();
+      nextFrame = true;
       break;
     }
-    case MessageType::RenderStepFile:
-      DocHandle aDoc = std::any_cast<DocHandle>(message.data);
-      context.currentlyViewingDoc = aDoc;
-      context.renderingMode = RenderingMode::RenderStepFile;
-      printLabels(aDoc->Main());
+    case MessageType::DrawLoadingScreen: {
+      clearCanvas(Colors::Platinum);
+      drawLoadingScreen(context->shaderProgram, context->spinnerParams);
+
+      if (context->showingSpinner) {
+        // schedule next frame
+        Staircase::Message msg;
+        msg.type = MessageType::DrawLoadingScreen;
+        context->pushMessage(msg);
+        nextFrame = true;
+      } else {
+        nextFrame = false;
+      }
       break;
     }
-
-    if (message.callback != nullptr) { message.callback(); }
-  }
-}
-
-void draw(AppContext &context) {
-  GLenum err = glGetError();
-  if (err != GL_NO_ERROR) {
-    std::cerr << "OpenGL error: " << err << std::endl;
-    return;
-  }
-  if (!context.occtComponentsInitialized) { clearCanvas(Colors::Platinum); }
-
-  switch (context.renderingMode) {
-  case RenderingMode::ClearScreen: clearCanvas(Colors::Black); break;
-  case RenderingMode::DrawCheckerboard: drawCheckerBoard(context.shaderProgram); break;
-  case RenderingMode::RenderStepFile:
-
-    if (!context.occtComponentsInitialized) {
-      initializeOcctComponents(context);
-      context.occtComponentsInitialized = true;
+    default: std::cout << "Unhandled MessageType::" << std::endl; break;
     }
 
-    renderStepFile(context);
-    break;
-  case RenderingMode::DrawLoadingScreen: {
-    drawLoadingScreen(context.shaderProgram, context.spinnerParams);
-    break;
+    if (message.nextMessage) {
+      context->pushMessage(*message.nextMessage);
+      nextFrame = true;
+    }
   }
-  default: break;
-  }
+
+  if (nextFrame) { emscripten_set_timeout(handleMessages, FPS60, context); }
 }
 
 EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
@@ -191,7 +194,6 @@ EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
   switch (eventType) {
   case EMSCRIPTEN_EVENT_MOUSEDOWN:
     std::cout << "[EVT] EMSCRIPTEN_EVENT_MOUSEDOWN" << std::endl;
-    context->shouldRotate = !context->shouldRotate;
     break;
   default:
     std::cout << "Unhandled mouse event type: " << eventType << std::endl;
