@@ -114,18 +114,19 @@ void printLabels(TDF_Label const &label, int level) {
 }
 
 void readStepFile(
-    AppContext &context, std::string stepFileStr,
+    Handle(XCAFApp_Application) app, std::string stepFileStr,
     std::function<void(std::optional<Handle(TDocStd_Document)>)> callback) {
 
   auto aNewDoc = [&]() -> Handle(TDocStd_Document) {
     Handle(TDocStd_Document) aDoc;
-    context.getApp()->NewDocument("MDTV-XCAF", aDoc);
+    app->NewDocument("MDTV-XCAF", aDoc);
     return aDoc;
   };
 
   std::istringstream fromStream(stepFileStr);
 
   std::optional<Handle(TDocStd_Document)> docOpt;
+
   {
     Timer timer = Timer("readInto(aNewDoc, fromStream)");
     docOpt = readInto(aNewDoc, fromStream);

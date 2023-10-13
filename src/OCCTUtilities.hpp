@@ -16,8 +16,7 @@ readInto(std::function<Handle(TDocStd_Document)()> aNewDoc,
  */
 void printLabels(TDF_Label const &label, int level = 0);
 
-void readStepFile(
-    AppContext &context, std::string stepFileStr,
+void readStepFile(Handle(XCAFApp_Application) app, std::string stepFileStr,
     std::function<void(std::optional<Handle(TDocStd_Document)>)>
         callback);
 

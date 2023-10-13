@@ -125,7 +125,7 @@ void handleMessages(AppContext &context,
 
       std::thread([&context, stepFileStr]() {
         readStepFile(
-            context, stepFileStr, [&context](std::optional<DocHandle> docOpt) {
+            XCAFApp_Application::GetApplication(), stepFileStr, [&context](std::optional<DocHandle> docOpt) {
               if (!docOpt.has_value()) {
                 std::cerr << "Failed to read STEP file: DocHandle is empty"
                           << std::endl;
