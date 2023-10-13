@@ -2,15 +2,14 @@
 #include <GLES2/gl2.h>
 #include <OpenGl_GraphicDriver.hxx>
 #include <Wasm_Window.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
 #include <emscripten.h>
+#include <opencascade/AIS_Shape.hxx>
 #include <opencascade/STEPCAFControl_Reader.hxx>
 #include <opencascade/TDF_ChildIterator.hxx>
 #include <opencascade/TDataStd_Name.hxx>
 #include <opencascade/TDocStd_Document.hxx>
 #include <opencascade/XCAFDoc_ShapeTool.hxx>
-#include <XCAFDoc_DocumentTool.hxx>
-#include <opencascade/AIS_Shape.hxx>
-
 void initializeOcctComponents(AppContext &context) {
 
   float myDevicePixelRatio = emscripten_get_device_pixel_ratio();
@@ -135,7 +134,8 @@ void readStepFile(
   callback(docOpt);
 }
 
-std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document) const aDoc) {
+std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document)
+                                               const aDoc) {
   std::vector<TopoDS_Shape> shapes;
 
   TDF_Label mainLabel = aDoc->Main();
