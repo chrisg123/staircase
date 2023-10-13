@@ -31,6 +31,7 @@ public:
   GLuint shaderProgram;
   GLint canvasWidth = 0;
   GLint canvasHeight = 0;
+  std::unique_ptr<StaircaseViewController> viewController;
   Handle(V3d_Viewer) viewer;
   Handle(V3d_View) view;
   Handle(AIS_InteractiveContext) aisContext;
