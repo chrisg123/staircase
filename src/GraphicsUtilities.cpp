@@ -1,13 +1,14 @@
 #include "GraphicsUtilities.hpp"
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include <GLES2/gl2.h>
 
 void clearCanvas(RGB color) {
   glClearColor(color.r, color.g, color.b, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
+void drawSquare(GLuint shaderProgram, GLfloat x, GLfloat y, GLfloat size,
                 GLfloat r, GLfloat g, GLfloat b, float aspectRatio) {
   GLfloat adjY = y * aspectRatio;
   GLfloat adjSize = size * aspectRatio;
@@ -16,8 +17,8 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
                         adjY, 0.0f, x + size,       adjY + adjSize,
                         0.0f, x,    adjY + adjSize, 0.0f};
 
-  GLint colorUniform = glGetUniformLocation(context.shaderProgram, "color");
-  GLint posAttrib = glGetAttribLocation(context.shaderProgram, "position");
+  GLint colorUniform = glGetUniformLocation(shaderProgram, "color");
+  GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
 
   glUniform4f(colorUniform, r, g, b, 1.0f);
 
@@ -31,7 +32,7 @@ void drawSquare(AppContext &context, GLfloat x, GLfloat y, GLfloat size,
   glDeleteBuffers(1, &vertexBuffer);
 }
 
-void drawCircle(AppContext &context, GLfloat centerX, GLfloat centerY,
+void drawCircle(GLuint shaderProgram, GLfloat centerX, GLfloat centerY,
                 GLfloat radius, RGB color, float aspectRatio) {
   int const numSegments = 100; // Increase for a smoother circle
 
@@ -46,8 +47,8 @@ void drawCircle(AppContext &context, GLfloat centerX, GLfloat centerY,
     vertices[i * 3 + 2] = 0.0f;
   }
 
-  GLint colorUniform = glGetUniformLocation(context.shaderProgram, "color");
-  GLint posAttrib = glGetAttribLocation(context.shaderProgram, "position");
+  GLint colorUniform = glGetUniformLocation(shaderProgram, "color");
+  GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
 
   glUniform4f(colorUniform, color.r, color.g, color.b, 1.0f);
 
@@ -63,13 +64,13 @@ void drawCircle(AppContext &context, GLfloat centerX, GLfloat centerY,
   glDeleteBuffers(1, &vertexBuffer);
 }
 
-void drawLine(AppContext &context, GLfloat x1, GLfloat y1, GLfloat x2,
+void drawLine(GLuint shaderProgram, GLfloat x1, GLfloat y1, GLfloat x2,
               GLfloat y2, GLfloat thickness, RGB color) {
 
   GLfloat vertices[] = {x1, y1, 0.0f, x2, y2, 0.0f};
 
-  GLint colorUniform = glGetUniformLocation(context.shaderProgram, "color");
-  GLint posAttrib = glGetAttribLocation(context.shaderProgram, "position");
+  GLint colorUniform = glGetUniformLocation(shaderProgram, "color");
+  GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
 
   glUniform4f(colorUniform, color.r, color.g, color.b, 1.0f);
 
@@ -86,19 +87,23 @@ void drawLine(AppContext &context, GLfloat x1, GLfloat y1, GLfloat x2,
   glDeleteBuffers(1, &vertexBuffer);
 }
 
-void drawCheckerBoard(AppContext &context) {
-  float aspectRatio = static_cast<float>(context.canvasWidth) /
-                      static_cast<float>(context.canvasHeight);
+void drawCheckerBoard(GLuint shaderProgram) {
+  GLint viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  GLint canvasWidth = viewport[2];
+  GLint canvasHeight = viewport[3];
+
+  float aspectRatio =
+      static_cast<float>(canvasWidth) / static_cast<float>(canvasHeight);
 
   float const coordMin = -1.0f;
   float const coordMax = 1.0f;
   float const coordRange = coordMax - coordMin;
 
   // determine rows and columns based arbitrarily on 5% of the longer side.
-  float fivePercentLongestSide =
-      std::max(context.canvasHeight, context.canvasWidth) * 0.05f;
-  int rows = static_cast<int>(context.canvasHeight / fivePercentLongestSide);
-  int cols = static_cast<int>(context.canvasWidth / fivePercentLongestSide);
+  float fivePercentLongestSide = std::max(canvasHeight, canvasWidth) * 0.05f;
+  int rows = static_cast<int>(canvasHeight / fivePercentLongestSide);
+  int cols = static_cast<int>(canvasWidth / fivePercentLongestSide);
 
   // Adjust square size to fit perfectly within canvas width
   float squareSize = coordRange / cols;
@@ -110,14 +115,19 @@ void drawCheckerBoard(AppContext &context) {
       float x = coordMin + (i * squareSize);
       // Scale y by aspect ratio since square size is based on canvas width.
       float y = (coordMin / aspectRatio) + (j * squareSize);
-      drawSquare(context, x, y, squareSize, color.r, color.g, color.b,
+      drawSquare(shaderProgram, x, y, squareSize, color.r, color.g, color.b,
                  aspectRatio);
     }
   }
 }
-void drawLoadingScreen(AppContext &context, SpinnerParams &spinnerParams) {
-  float aspectRatio = static_cast<float>(context.canvasWidth) /
-                      static_cast<float>(context.canvasHeight);
+void drawLoadingScreen(GLuint shaderProgram, SpinnerParams &spinnerParams) {
+  GLint viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  GLint canvasWidth = viewport[2];
+  GLint canvasHeight = viewport[3];
+
+  float aspectRatio =
+      static_cast<float>(canvasWidth) / static_cast<float>(canvasHeight);
 
   float const coordMin = -1.0f;
   float const coordMax = 1.0f;
@@ -129,29 +139,28 @@ void drawLoadingScreen(AppContext &context, SpinnerParams &spinnerParams) {
   float offsetX =
       coordRange *
       ((spinnerParams.radius * handFactor * cos(spinnerParams.initialAngle)) /
-       context.canvasWidth);
+       canvasWidth);
   float offsetY =
       coordRange *
       ((spinnerParams.radius * handFactor * sin(spinnerParams.initialAngle)) /
-       context.canvasHeight);
+       canvasHeight);
 
   float startX = centerX;
   float startY = centerY;
   float endX = centerX + offsetX;
   float endY = centerY + offsetY;
 
-  drawCircle(context, 0, 0,
-             coordRange * (spinnerParams.radius / context.canvasWidth),
+  drawCircle(shaderProgram, 0, 0,
+             coordRange * (spinnerParams.radius / canvasWidth),
              spinnerParams.color, aspectRatio);
 
-  drawLine(context, startX, startY, endX, endY, spinnerParams.lineThickness,
-           spinnerParams.color);
+  drawLine(shaderProgram, startX, startY, endX, endY,
+           spinnerParams.lineThickness, spinnerParams.color);
 
-  float dotSize = coordRange *
-                  ((spinnerParams.lineThickness * 1.1) / context.canvasWidth) *
-                  1.1;
-  drawSquare(context, centerX - dotSize / 2, centerY - dotSize / 2, dotSize,
-             spinnerParams.color.r, spinnerParams.color.g,
+  float dotSize =
+      coordRange * ((spinnerParams.lineThickness * 1.1) / canvasWidth) * 1.1;
+  drawSquare(shaderProgram, centerX - dotSize / 2, centerY - dotSize / 2,
+             dotSize, spinnerParams.color.r, spinnerParams.color.g,
              spinnerParams.color.b,
              aspectRatio); // Aspect ratio set to 1.0f for square
 
@@ -187,7 +196,6 @@ void setupViewport(AppContext &context) {
   context.canvasWidth = viewport[2];
   context.canvasHeight = viewport[3];
 }
-
 void compileShader(GLuint &shader, char const *source, GLenum type) {
   shader = glCreateShader(type);
   glShaderSource(shader, 1, &source, NULL);

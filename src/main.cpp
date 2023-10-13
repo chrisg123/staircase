@@ -166,7 +166,7 @@ void draw(AppContext &context) {
 
   switch (context.renderingMode) {
   case RenderingMode::ClearScreen: clearCanvas(Colors::Black); break;
-  case RenderingMode::DrawCheckerboard: drawCheckerBoard(context); break;
+  case RenderingMode::DrawCheckerboard: drawCheckerBoard(context.shaderProgram); break;
   case RenderingMode::RenderStepFile:
 
     if (!context.occtComponentsInitialized) {
@@ -177,7 +177,7 @@ void draw(AppContext &context) {
     renderStepFile(context);
     break;
   case RenderingMode::DrawLoadingScreen: {
-    drawLoadingScreen(context, context.spinnerParams);
+    drawLoadingScreen(context.shaderProgram, context.spinnerParams);
     break;
   }
   default: break;
