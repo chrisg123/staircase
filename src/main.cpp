@@ -27,9 +27,6 @@ void main_loop(void *arg);
 void handleMessages(void *arg);
 
 void draw(AppContext &context);
-EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
-                        void *userData);
-void initializeUserInteractions(AppContext &context);
 
 void bootstrap(void *arg);
 void *loadStepFile(void *arg);
@@ -79,7 +76,7 @@ EMSCRIPTEN_KEEPALIVE int main() {
   emscripten_set_main_loop(dummyMainLoop, -1, 0);
 
   createCanvas(containerId, context->canvasId);
-  initializeUserInteractions(*context);
+  context->viewController->initWindow();
   setupWebGLContext(context->canvasId);
   setupViewport(*context);
   initializeOcctComponents(*context);
@@ -214,26 +211,4 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
   }
 
   if (nextFrame) { emscripten_set_timeout(handleMessages, FPS60, context); }
-}
-
-EM_BOOL onMouseCallback(int eventType, EmscriptenMouseEvent const *mouseEvent,
-                        void *userData) {
-  AppContext *context = static_cast<AppContext *>(userData);
-
-  switch (eventType) {
-  case EMSCRIPTEN_EVENT_MOUSEDOWN:
-    std::cout << "[EVT] EMSCRIPTEN_EVENT_MOUSEDOWN" << std::endl;
-    break;
-  default:
-    std::cout << "Unhandled mouse event type: " << eventType << std::endl;
-    break;
-  }
-  return EM_TRUE;
-}
-
-void initializeUserInteractions(AppContext &context) {
-  const EM_BOOL toUseCapture = EM_TRUE;
-
-  emscripten_set_mousedown_callback(("#" + context.canvasId).c_str(), &context,
-                                    toUseCapture, onMouseCallback);
 }
