@@ -73,6 +73,9 @@ EMSCRIPTEN_KEEPALIVE int main() {
   std::string containerId = "staircase-container";
   context->canvasId = "staircase-canvas";
 
+  context->viewController =
+      std::make_unique<StaircaseViewController>(context->canvasId);
+
   emscripten_set_main_loop(dummyMainLoop, -1, 0);
 
   createCanvas(containerId, context->canvasId);
@@ -195,11 +198,7 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
       drawLoadingScreen(context->shaderProgram, context->spinnerParams);
 
       if (context->showingSpinner) {
-        // schedule next frame
-        Staircase::Message msg;
-        msg.type = MessageType::DrawLoadingScreen;
-        context->pushMessage(msg);
-        nextFrame = true;
+        schedNextFrameWith(MessageType::DrawLoadingScreen);
       } else {
         nextFrame = false;
       }
