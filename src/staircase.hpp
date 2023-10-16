@@ -11,7 +11,9 @@ enum Type {
   DrawCheckerboard,
   DrawLoadingScreen,
   ReadStepFile,
-  RenderStepFile
+  RenderStepFile,
+  InitDemoScene,
+  RedrawView,
 };
 
 static char const *toString(Type type) {
@@ -22,6 +24,8 @@ static char const *toString(Type type) {
   case DrawLoadingScreen: return "DrawLoadingScreen";
   case ReadStepFile: return "ReadStepFile";
   case RenderStepFile: return "RenderStepFile";
+  case InitDemoScene: return "InitDemoScene";
+  case RedrawView: return "RedrawView";
   default: return "Unknown";
   }
 }
