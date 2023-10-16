@@ -155,6 +155,13 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
   bool nextFrame = false;
   int const FPS60 = 1000 / 60;
 
+  auto schedNextFrameWith = [&context, &nextFrame](MessageType::Type type) {
+    Staircase::Message msg;
+    msg.type = type;
+    context->pushMessage(msg);
+    nextFrame = true;
+  };
+
   while (!localQueue.empty()) {
     Staircase::Message message = localQueue.front();
     localQueue.pop();
@@ -174,6 +181,14 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
 
       nextFrame = true;
       break;
+    }
+    case MessageType::InitDemoScene:
+      context->viewController->initDemoScene();
+      context->viewController->initStepFile(context->currentlyViewingDoc);
+      break;
+    case MessageType::RedrawView: {
+      context->viewController->redrawView();
+      schedNextFrameWith(MessageType::RedrawView);
     }
     case MessageType::DrawLoadingScreen: {
       clearCanvas(Colors::Platinum);
