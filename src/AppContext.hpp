@@ -34,15 +34,25 @@ public:
   std::unique_ptr<StaircaseViewController> viewController;
   Handle(V3d_Viewer) viewer;
   Handle(V3d_View) view;
-  Handle(AIS_InteractiveContext) aisContext;
+
   bool stepFileLoaded = false;
   bool shouldRotate = true;
   SpinnerParams spinnerParams;
   std::string canvasId;
+
+  Handle(AIS_InteractiveContext) getAISContext() const {
+    if (viewController) { return viewController->getAISContext(); }
+    return Handle(AIS_InteractiveContext)();
+  }
+  void setAISContext(const Handle(AIS_InteractiveContext) &aisContext) {
+    if (viewController) {
+      viewController->setAISContext(aisContext);
+    }
+  }
 
 private:
   std::queue<Staircase::Message> messageQueue;
   std::mutex queueMutex;
 };
 
-#endif //APPCONTEXT_HPP
+#endif // APPCONTEXT_HPP

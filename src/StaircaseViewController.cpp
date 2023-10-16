@@ -1,4 +1,5 @@
 #include "StaircaseViewController.hpp"
+#include "AppContext.hpp"
 #include "OCCTUtilities.hpp"
 #include "staircase.hpp"
 #include <opencascade/V3d_View.hxx>
@@ -89,6 +90,9 @@ bool StaircaseViewController::initViewer() {
   auto canvasTarget = getCanvasTag();
 
   Handle(Wasm_Window) aWindow = new Wasm_Window(canvasTarget);
+  std::cout << "windowSize.x(): " << windowSize.x() << "windowSize.y() " << windowSize.y() << std::endl;
+  // auto context = this->getAISContext();
+  // std::cout << "context.canvasWidth: " << context.canvasWidth << "context.canvasHeight: " << context.canvasHeight << std::endl;
   aWindow->Size(windowSize.x(), windowSize.y());
 
   textAspect = new Prs3d_TextAspect();
@@ -102,7 +106,7 @@ bool StaircaseViewController::initViewer() {
   textAspect->SetHorizontalJustification(Graphic3d_HTA_LEFT);
   textAspect->SetVerticalJustification(Graphic3d_VTA_BOTTOM);
 
-  view = new V3d_View(aViewer);
+  view = aViewer->CreateView();
   view->Camera()->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
   view->SetImmediateUpdate(false);
   view->ChangeRenderingParams().IsShadowEnabled = false;
@@ -115,6 +119,7 @@ bool StaircaseViewController::initViewer() {
 
   aisContext = new AIS_InteractiveContext(aViewer);
   initPixelScaleRatio();
+
   return true;
 }
 
@@ -252,4 +257,12 @@ StaircaseViewController::onResizeEvent(int eventType,
 char const *StaircaseViewController::getCanvasTag() {
   prefixedCanvasId = "#" + canvasId;
   return prefixedCanvasId.c_str();
+}
+
+Handle(AIS_InteractiveContext) StaircaseViewController::getAISContext() const {
+  return aisContext;
+}
+
+void StaircaseViewController::setAISContext(Handle(AIS_InteractiveContext) const &aisContext) {
+  this->aisContext = aisContext;
 }

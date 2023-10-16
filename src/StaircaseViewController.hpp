@@ -24,6 +24,9 @@ public:
   EM_BOOL onWheelEvent(int theEventType, EmscriptenWheelEvent const *theEvent);
   EM_BOOL onResizeEvent(int theEventType, EmscriptenUiEvent const *theEvent);
 
+  Handle(AIS_InteractiveContext) getAISContext() const;
+  void setAISContext(Handle(AIS_InteractiveContext) const &aisContext);
+
 private:
   std::string canvasId;
   std::string prefixedCanvasId;
