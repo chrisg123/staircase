@@ -34,6 +34,25 @@ void initializeUserInteractions(AppContext &context);
 void bootstrap(void *arg);
 void *loadStepFile(void *arg);
 
+template<typename... MessageTypes>
+std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
+  std::shared_ptr<Staircase::Message> head = nullptr;
+  std::shared_ptr<Staircase::Message> current = nullptr;
+
+  auto createAndLink = [&head, &current](MessageType::Type type) {
+    auto newMsg = std::make_shared<Staircase::Message>();
+    newMsg->type = type;
+    if (!head) {
+      head = newMsg;
+    } else {
+      current->nextMessage = newMsg;
+    }
+    current = newMsg;
+  };
+  (createAndLink(types), ...);
+  return head;
+}
+
 extern "C" void dummyMainLoop() { emscripten_cancel_main_loop(); }
 
 EMSCRIPTEN_KEEPALIVE int main() {
@@ -118,14 +137,10 @@ void *loadStepFile(void *arg) {
                  context->showingSpinner = false;
                  context->currentlyViewingDoc = aDoc;
 
-                 Staircase::Message msg1;
-                 msg1.type = MessageType::ClearScreen;
-
-                 auto msg2 = std::make_shared<Staircase::Message>();
-                 msg2->type = MessageType::RenderStepFile;
-                 msg1.nextMessage = msg2;
-
-                 context->pushMessage(msg1);
+                 context->pushMessage(*chain(MessageType::ClearScreen,
+                                             MessageType::ClearScreen,
+                                             MessageType::ClearScreen,
+                                             MessageType::RenderStepFile));
 
                  emscripten_async_run_in_main_runtime_thread(
                      EM_FUNC_SIG_VI, handleMessages, (void *)context);
