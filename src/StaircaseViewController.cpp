@@ -141,7 +141,7 @@ void StaircaseViewController::initPixelScaleRatio() {
 }
 
 void StaircaseViewController::initDemoScene() {
-  std::cout << "TODO: StaircaseViewController::initDemoScene" << std::endl;
+  std::cout << "StaircaseViewController::initDemoScene" << std::endl;
   viewCube = new AIS_ViewCube();
   initPixelScaleRatio();
   viewCube->SetTransformPersistence(new Graphic3d_TransformPers(
