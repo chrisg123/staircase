@@ -31,7 +31,7 @@ void draw(AppContext &context);
 void bootstrap(void *arg);
 void *loadStepFile(void *arg);
 
-template<typename... MessageTypes>
+template <typename... MessageTypes>
 std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
   std::shared_ptr<Staircase::Message> head = nullptr;
   std::shared_ptr<Staircase::Message> current = nullptr;
@@ -95,7 +95,8 @@ EMSCRIPTEN_KEEPALIVE int main() {
 
   EM_ASM(Module['noExitRuntime'] = true);
 
-  drawCheckerBoard(context->shaderProgram, context->viewController->getWindowSize());
+  drawCheckerBoard(context->shaderProgram,
+                   context->viewController->getWindowSize());
 
   int const INITIAL_DELAY_MS = 1000;
   emscripten_async_call(bootstrap, context, INITIAL_DELAY_MS);
@@ -136,11 +137,10 @@ void *loadStepFile(void *arg) {
                  context->showingSpinner = false;
                  context->currentlyViewingDoc = aDoc;
 
-                 context->pushMessage(*chain(MessageType::ClearScreen,
-                                             MessageType::ClearScreen,
-                                             MessageType::ClearScreen,
-                                             MessageType::InitDemoScene,
-                                             MessageType::RedrawView));
+                 context->pushMessage(*chain(
+                     MessageType::ClearScreen, MessageType::ClearScreen,
+                     MessageType::ClearScreen, MessageType::InitDemoScene,
+                     MessageType::RedrawView));
 
                  emscripten_async_run_in_main_runtime_thread(
                      EM_FUNC_SIG_VI, handleMessages, (void *)context);
@@ -168,20 +168,6 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
 
     switch (message.type) {
     case MessageType::ClearScreen: clearCanvas(Colors::Platinum); break;
-    case MessageType::RenderStepFile: {
-      renderStepFile(*context);
-
-      Staircase::Message msg1;
-      msg1.type = MessageType::ClearScreen;
-      context->pushMessage(msg1);
-
-      Staircase::Message msg2;
-      msg2.type = MessageType::RenderStepFile;
-      context->pushMessage(msg2);
-
-      nextFrame = true;
-      break;
-    }
     case MessageType::InitDemoScene:
       context->viewController->initDemoScene();
       context->viewController->initStepFile(context->currentlyViewingDoc);
