@@ -90,9 +90,6 @@ bool StaircaseViewController::initViewer() {
   auto canvasTarget = getCanvasTag();
 
   Handle(Wasm_Window) aWindow = new Wasm_Window(canvasTarget);
-  std::cout << "windowSize.x(): " << windowSize.x() << "windowSize.y() " << windowSize.y() << std::endl;
-  // auto context = this->getAISContext();
-  // std::cout << "context.canvasWidth: " << context.canvasWidth << "context.canvasHeight: " << context.canvasHeight << std::endl;
   aWindow->Size(windowSize.x(), windowSize.y());
 
   textAspect = new Prs3d_TextAspect();
