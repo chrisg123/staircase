@@ -2,7 +2,6 @@
 #define OCCTUTILITIES_HPP
 #include "AppContext.hpp"
 #include "staircase.hpp"
-void initializeOcctComponents(AppContext &context);
 
 std::optional<Handle(TDocStd_Document)>
 readInto(std::function<Handle(TDocStd_Document)()> aNewDoc,
