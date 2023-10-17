@@ -17,6 +17,7 @@ void drawLine(GLuint shaderProgram, GLfloat x1, GLfloat y1, GLfloat x2,
               GLfloat y2, GLfloat thickness, RGB color);
 
 void drawCheckerBoard(GLuint shaderProgram);
+void drawCheckerBoard(GLuint shaderProgram, Graphic3d_Vec2i windowSize);
 
 void drawLoadingScreen(GLuint shaderProgram, SpinnerParams &spinnerParams);
 

@@ -78,8 +78,7 @@ EMSCRIPTEN_KEEPALIVE int main() {
   createCanvas(containerId, context->canvasId);
   context->viewController->initWindow();
   setupWebGLContext(context->canvasId);
-  setupViewport(*context);
-  initializeOcctComponents(*context);
+  context->viewController->initViewer();
 
   context->shaderProgram = createShaderProgram(
       /*vertexShaderSource=*/
@@ -96,7 +95,7 @@ EMSCRIPTEN_KEEPALIVE int main() {
 
   EM_ASM(Module['noExitRuntime'] = true);
 
-  drawCheckerBoard(context->shaderProgram);
+  drawCheckerBoard(context->shaderProgram, context->viewController->getWindowSize());
 
   int const INITIAL_DELAY_MS = 1000;
   emscripten_async_call(bootstrap, context, INITIAL_DELAY_MS);

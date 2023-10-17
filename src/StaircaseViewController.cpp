@@ -270,3 +270,6 @@ Handle(AIS_InteractiveContext) StaircaseViewController::getAISContext() const {
 void StaircaseViewController::setAISContext(Handle(AIS_InteractiveContext) const &aisContext) {
   this->aisContext = aisContext;
 }
+const Graphic3d_Vec2i& StaircaseViewController::getWindowSize() const {
+    return windowSize;
+}

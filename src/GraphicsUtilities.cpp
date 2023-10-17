@@ -87,11 +87,9 @@ void drawLine(GLuint shaderProgram, GLfloat x1, GLfloat y1, GLfloat x2,
   glDeleteBuffers(1, &vertexBuffer);
 }
 
-void drawCheckerBoard(GLuint shaderProgram) {
-  GLint viewport[4];
-  glGetIntegerv(GL_VIEWPORT, viewport);
-  GLint canvasWidth = viewport[2];
-  GLint canvasHeight = viewport[3];
+void drawCheckerBoard(GLuint shaderProgram, Graphic3d_Vec2i windowSize) {
+  GLint canvasWidth = windowSize.x();
+  GLint canvasHeight = windowSize.y();
 
   float aspectRatio =
       static_cast<float>(canvasWidth) / static_cast<float>(canvasHeight);

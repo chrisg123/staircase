@@ -30,6 +30,7 @@ public:
   Handle(AIS_InteractiveContext) getAISContext() const;
   void setAISContext(Handle(AIS_InteractiveContext) const &aisContext);
 
+  const Graphic3d_Vec2i& getWindowSize() const;
 private:
   std::string canvasId;
   std::string prefixedCanvasId;
