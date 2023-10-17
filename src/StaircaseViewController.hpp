@@ -24,6 +24,9 @@ public:
   EM_BOOL onWheelEvent(int theEventType, EmscriptenWheelEvent const *theEvent);
   EM_BOOL onResizeEvent(int theEventType, EmscriptenUiEvent const *theEvent);
 
+  Handle(V3d_View) getView() const;
+  void setView(Handle(V3d_View) const &view);
+
   Handle(AIS_InteractiveContext) getAISContext() const;
   void setAISContext(Handle(AIS_InteractiveContext) const &aisContext);
 

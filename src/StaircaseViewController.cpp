@@ -259,6 +259,13 @@ char const *StaircaseViewController::getCanvasTag() {
   return prefixedCanvasId.c_str();
 }
 
+Handle(V3d_View) StaircaseViewController::getView() const {
+  return view;
+}
+
+void StaircaseViewController::setView(Handle(V3d_View) const &view) {
+  this->view = view;
+}
 Handle(AIS_InteractiveContext) StaircaseViewController::getAISContext() const {
   return aisContext;
 }

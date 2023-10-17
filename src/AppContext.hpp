@@ -32,13 +32,22 @@ public:
   GLint canvasWidth = 0;
   GLint canvasHeight = 0;
   std::unique_ptr<StaircaseViewController> viewController;
-  Handle(V3d_Viewer) viewer;
-  Handle(V3d_View) view;
 
   bool stepFileLoaded = false;
   bool shouldRotate = true;
   SpinnerParams spinnerParams;
   std::string canvasId;
+
+  Handle(V3d_View) getView() const {
+    if (viewController) { return viewController->getView(); }
+    return Handle(V3d_View)();
+  }
+
+  void setView(Handle(V3d_View) const &view) {
+    if (viewController) {
+      viewController->setView(view);
+    }
+  }
 
   Handle(AIS_InteractiveContext) getAISContext() const {
     if (viewController) { return viewController->getAISContext(); }
@@ -51,6 +60,7 @@ public:
   }
 
 private:
+  Handle(V3d_View) view;
   std::queue<Staircase::Message> messageQueue;
   std::mutex queueMutex;
 };

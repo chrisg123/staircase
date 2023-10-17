@@ -63,8 +63,7 @@ void initializeOcctComponents(AppContext &context) {
 
   Handle(AIS_InteractiveContext) aContext = new AIS_InteractiveContext(aViewer);
 
-  context.view = aView;
-  context.viewer = aViewer;
+  context.setView(aView);
   context.setAISContext(aContext);
 }
 
@@ -157,7 +156,7 @@ std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document)
 void renderStepFile(AppContext &context) {
   Handle(TDocStd_Document) aDoc = context.currentlyViewingDoc;
   Handle(AIS_InteractiveContext) aisContext = context.getAISContext();
-  Handle(V3d_View) aView = context.view;
+  Handle(V3d_View) aView = context.getView();
   if (aDoc.IsNull() || context.getAISContext().IsNull()) {
     std::cerr << "No document or AIS context available to render." << std::endl;
     return;
