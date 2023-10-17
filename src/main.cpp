@@ -139,7 +139,8 @@ void *loadStepFile(void *arg) {
                  context->pushMessage(*chain(MessageType::ClearScreen,
                                              MessageType::ClearScreen,
                                              MessageType::ClearScreen,
-                                             MessageType::RenderStepFile));
+                                             MessageType::InitDemoScene,
+                                             MessageType::RedrawView));
 
                  emscripten_async_run_in_main_runtime_thread(
                      EM_FUNC_SIG_VI, handleMessages, (void *)context);
@@ -188,6 +189,7 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
     case MessageType::RedrawView: {
       context->viewController->redrawView();
       schedNextFrameWith(MessageType::RedrawView);
+      break;
     }
     case MessageType::DrawLoadingScreen: {
       clearCanvas(Colors::Platinum);
