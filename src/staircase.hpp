@@ -13,6 +13,7 @@ enum Type {
   ReadStepFile,
   InitDemoScene,
   RedrawView,
+  SetStepFileContent,
 };
 
 static char const *toString(Type type) {
@@ -24,7 +25,8 @@ static char const *toString(Type type) {
   case ReadStepFile: return "ReadStepFile";
   case InitDemoScene: return "InitDemoScene";
   case RedrawView: return "RedrawView";
-  default: return "Unknown";
+  case SetStepFileContent: return "SetStepFileContent";
+  default : return "Unknown";
   }
 }
 } // namespace MessageType
@@ -32,7 +34,11 @@ static char const *toString(Type type) {
 namespace Staircase {
 struct Message {
   MessageType::Type type;
+  std::shared_ptr<void> data;
   std::shared_ptr<Message> nextMessage;
+
+  Message(MessageType::Type type, std::shared_ptr<void> data = nullptr)
+      : type(type), data(data), nextMessage(nullptr) {}
 };
 } // namespace Staircase
 

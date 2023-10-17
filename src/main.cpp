@@ -13,6 +13,7 @@
 #include <optional>
 #include <queue>
 #include <thread>
+#include <memory>
 
 bool arePthreadsEnabled() {
 #ifdef __EMSCRIPTEN_PTHREADS__
@@ -37,8 +38,7 @@ std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
   std::shared_ptr<Staircase::Message> current = nullptr;
 
   auto createAndLink = [&head, &current](MessageType::Type type) {
-    auto newMsg = std::make_shared<Staircase::Message>();
-    newMsg->type = type;
+    auto newMsg = std::make_shared<Staircase::Message>(type);
     if (!head) {
       head = newMsg;
     } else {
@@ -115,10 +115,11 @@ void *loadStepFile(void *arg) {
   std::cout << "loadStepFile" << std::endl;
   std::string stepFileStr = embeddedStepFile;
 
-  Staircase::Message msg;
   context->showingSpinner = true;
-  msg.type = MessageType::DrawLoadingScreen;
-  context->pushMessage(msg);
+  context->pushMessage({MessageType::DrawLoadingScreen});
+
+  auto myData = std::make_shared<std::string>(stepFileStr);
+  context->pushMessage({MessageType::SetStepFileContent, myData});
 
   emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
                                               (void *)context);
@@ -156,8 +157,7 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
   int const FPS60 = 1000 / 60;
 
   auto schedNextFrameWith = [&context, &nextFrame](MessageType::Type type) {
-    Staircase::Message msg;
-    msg.type = type;
+    Staircase::Message msg(type);
     context->pushMessage(msg);
     nextFrame = true;
   };
@@ -186,6 +186,14 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
       } else {
         nextFrame = false;
       }
+      break;
+    }
+    case MessageType::SetStepFileContent: {
+      auto stepFileStr = std::static_pointer_cast<std::string>(message.data);
+      EM_ASM(
+          { document.getElementById('stepText').innerHTML = UTF8ToString($0); },
+          stepFileStr->c_str());
+
       break;
     }
     default: std::cout << "Unhandled MessageType::" << std::endl; break;
