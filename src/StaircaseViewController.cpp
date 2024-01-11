@@ -217,20 +217,18 @@ StaircaseViewController::onMouseEvent(int eventType,
     aWindow->ProcessMouseEvent(*this, eventType, &anEvent);
     return EM_FALSE;
   }
-  return aWindow->ProcessMouseEvent(*this, eventType, event) ? EM_TRUE : EM_FALSE;
+  return aWindow->ProcessMouseEvent(*this, eventType, event) ? EM_TRUE
+                                                             : EM_FALSE;
 }
 
 EM_BOOL
 StaircaseViewController::onWheelEvent(int eventType,
                                       EmscriptenWheelEvent const *event) {
-  if (view.IsNull()
-   || eventType != EMSCRIPTEN_EVENT_WHEEL)
-  {
-    return EM_FALSE;
-  }
+  if (view.IsNull() || eventType != EMSCRIPTEN_EVENT_WHEEL) { return EM_FALSE; }
 
-  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast (view->Window());
-  return aWindow->ProcessWheelEvent (*this, eventType, event) ? EM_TRUE : EM_FALSE;
+  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast(view->Window());
+  return aWindow->ProcessWheelEvent(*this, eventType, event) ? EM_TRUE
+                                                             : EM_FALSE;
 }
 
 EM_BOOL
