@@ -16,6 +16,8 @@ browser.
 - Pan, zoom, and rotate 3D models
 - High-performance rendering
 
+![Demo](demo.gif)
+
 ## Building
 
 #### For Linux
