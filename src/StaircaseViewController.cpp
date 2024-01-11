@@ -106,7 +106,7 @@ bool StaircaseViewController::initViewer() {
   view->ChangeRenderingParams().IsShadowEnabled = false;
   view->ChangeRenderingParams().Resolution =
       (unsigned int)96.0 * devicePixelRatio + 0.5;
-  view->ChangeRenderingParams().ToShowStats = true;
+  view->ChangeRenderingParams().ToShowStats = false;
   view->ChangeRenderingParams().StatsTextAspect = textAspect->Aspect();
   view->ChangeRenderingParams().StatsTextHeight = textAspect->Height();
   view->SetWindow(aWindow);
