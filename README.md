@@ -17,6 +17,9 @@ browser.
 - High-performance rendering
 
 ![Demo](demo.gif)
+<br>
+<sub>Note: The GIF is of reduced quality for file size considerations.</sub>
+
 
 ## Building
 
