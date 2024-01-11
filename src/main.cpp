@@ -141,7 +141,7 @@ void *loadStepFile(void *arg) {
                  context->pushMessage(*chain(
                      MessageType::ClearScreen, MessageType::ClearScreen,
                      MessageType::ClearScreen, MessageType::InitDemoScene,
-                     MessageType::RedrawView));
+                     MessageType::NextFrame));
 
                  emscripten_async_run_in_main_runtime_thread(
                      EM_FUNC_SIG_VI, handleMessages, (void *)context);
@@ -172,9 +172,8 @@ EMSCRIPTEN_KEEPALIVE void handleMessages(void *arg) {
       context->viewController->initDemoScene();
       context->viewController->initStepFile(context->currentlyViewingDoc);
       break;
-    case MessageType::RedrawView: {
-      context->viewController->redrawView();
-      schedNextFrameWith(MessageType::RedrawView);
+    case MessageType::NextFrame: {
+      schedNextFrameWith(MessageType::NextFrame);
       break;
     }
     case MessageType::DrawLoadingScreen: {

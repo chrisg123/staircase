@@ -12,7 +12,7 @@ enum Type {
   DrawLoadingScreen,
   ReadStepFile,
   InitDemoScene,
-  RedrawView,
+  NextFrame,
   SetStepFileContent,
 };
 
@@ -24,7 +24,7 @@ static char const *toString(Type type) {
   case DrawLoadingScreen: return "DrawLoadingScreen";
   case ReadStepFile: return "ReadStepFile";
   case InitDemoScene: return "InitDemoScene";
-  case RedrawView: return "RedrawView";
+  case NextFrame: return "NextFrame";
   case SetStepFileContent: return "SetStepFileContent";
   default : return "Unknown";
   }

@@ -170,6 +170,19 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
   }
 }
 
+void StaircaseViewController::ProcessInput() {
+  if (!view.IsNull()) {
+    // Schedule canvas redraw post user input, aligned with animation frame.
+    if (++updateRequestCount == 1) {
+      emscripten_async_call(onRedrawView, this, -1);
+    }
+  }
+}
+
+void StaircaseViewController::onRedrawView (void* view) {
+  return ((StaircaseViewController* )view)->redrawView();
+}
+
 void StaircaseViewController::updateView()
 {
   if (!view.IsNull())
@@ -183,7 +196,7 @@ void StaircaseViewController::redrawView()
 {
   if (!view.IsNull())
   {
-    //myNbUpdateRequests = 0;
+    updateRequestCount = 0;
     FlushViewEvents (aisContext, view, true);
   }
 }

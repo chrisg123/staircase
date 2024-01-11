@@ -10,7 +10,8 @@
 
 class StaircaseViewController : protected AIS_ViewController {
 public:
-  StaircaseViewController(std::string const &canvasId) : canvasId(canvasId) {}
+  StaircaseViewController(std::string const &canvasId)
+      : canvasId(canvasId), devicePixelRatio(1), updateRequestCount(0) {}
   virtual ~StaircaseViewController() {}
   void initWindow();
   bool initViewer();
@@ -23,6 +24,8 @@ public:
   EM_BOOL onMouseEvent(int eventType, EmscriptenMouseEvent const *event);
   EM_BOOL onWheelEvent(int theEventType, EmscriptenWheelEvent const *theEvent);
   EM_BOOL onResizeEvent(int theEventType, EmscriptenUiEvent const *theEvent);
+  static void onRedrawView(void *view);
+  virtual void ProcessInput() override;
 
   Handle(V3d_View) getView() const;
   void setView(Handle(V3d_View) const &view);
@@ -36,11 +39,13 @@ private:
   std::string prefixedCanvasId;
 
   float devicePixelRatio;
+  unsigned int updateRequestCount;
   Graphic3d_Vec2i windowSize;
 
   Handle(AIS_InteractiveContext) aisContext;
   Handle(Prs3d_TextAspect) textAspect;
   Handle(AIS_ViewCube) viewCube;
   Handle(V3d_View) view;
+
 };
 #endif // STAIRCASEVIEWCONTROLLER_HPP
