@@ -15,9 +15,9 @@ readInto(std::function<Handle(TDocStd_Document)()> aNewDoc,
  */
 void printLabels(TDF_Label const &label, int level = 0);
 
-void readStepFile(Handle(XCAFApp_Application) app, std::string stepFileStr,
-    std::function<void(std::optional<Handle(TDocStd_Document)>)>
-        callback);
+void readStepFile(
+    Handle(XCAFApp_Application) app, std::string stepFileStr,
+    std::function<void(std::optional<Handle(TDocStd_Document)>)> callback);
 
 std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document) const aDoc);
 void renderStepFile(AppContext &context);

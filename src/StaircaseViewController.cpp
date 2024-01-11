@@ -2,29 +2,26 @@
 #include "AppContext.hpp"
 #include "OCCTUtilities.hpp"
 #include "staircase.hpp"
-#include <opencascade/V3d_View.hxx>
 #include <Wasm_Window.hxx>
-#include <opencascade/Prs3d_DatumAspect.hxx>
-#include <opencascade/TopoDS_Shape.hxx>
-#include <opencascade/AIS_Shape.hxx>
 #include <opencascade/AIS_InteractiveContext.hxx>
+#include <opencascade/AIS_Shape.hxx>
 #include <opencascade/OpenGl_GraphicDriver.hxx>
+#include <opencascade/Prs3d_DatumAspect.hxx>
 #include <opencascade/TDocStd_Document.hxx>
+#include <opencascade/TopoDS_Shape.hxx>
+#include <opencascade/V3d_View.hxx>
 
-//! Update canvas bounding rectangle.
-EM_JS(void, jsUpdateBoundingClientRect, (), {
-  Module._myCanvasRect = Module.canvas.getBoundingClientRect();
-});
+// Update canvas bounding rectangle.
+EM_JS(void, jsUpdateBoundingClientRect, (),
+      { Module._myCanvasRect = Module.canvas.getBoundingClientRect(); });
 
-//! Get canvas bounding top.
-EM_JS(int, jsGetBoundingClientTop, (), {
-  return Math.round(Module._myCanvasRect.top);
-});
+// Get canvas bounding top.
+EM_JS(int, jsGetBoundingClientTop, (),
+      { return Math.round(Module._myCanvasRect.top); });
 
-//! Get canvas bounding left.
-EM_JS(int, jsGetBoundingClientLeft, (), {
-  return Math.round(Module._myCanvasRect.left);
-});
+// Get canvas bounding left.
+EM_JS(int, jsGetBoundingClientLeft, (),
+      { return Math.round(Module._myCanvasRect.left); });
 
 void StaircaseViewController::initWindow() {
   std::cout << "StaircaseViewController::initWindow()" << std::endl;
@@ -179,28 +176,23 @@ void StaircaseViewController::ProcessInput() {
   }
 }
 
-void StaircaseViewController::onRedrawView (void* view) {
-  return ((StaircaseViewController* )view)->redrawView();
+void StaircaseViewController::onRedrawView(void *view) {
+  return ((StaircaseViewController *)view)->redrawView();
 }
 
-void StaircaseViewController::updateView()
-{
-  if (!view.IsNull())
-  {
+void StaircaseViewController::updateView() {
+  if (!view.IsNull()) {
     view->Invalidate();
     ProcessInput();
   }
 }
 
-void StaircaseViewController::redrawView()
-{
-  if (!view.IsNull())
-  {
+void StaircaseViewController::redrawView() {
+  if (!view.IsNull()) {
     updateRequestCount = 0;
-    FlushViewEvents (aisContext, view, true);
+    FlushViewEvents(aisContext, view, true);
   }
 }
-
 
 EM_BOOL
 StaircaseViewController::onMouseEvent(int eventType,
@@ -267,9 +259,7 @@ char const *StaircaseViewController::getCanvasTag() {
   return prefixedCanvasId.c_str();
 }
 
-Handle(V3d_View) StaircaseViewController::getView() const {
-  return view;
-}
+Handle(V3d_View) StaircaseViewController::getView() const { return view; }
 
 void StaircaseViewController::setView(Handle(V3d_View) const &view) {
   this->view = view;
@@ -278,9 +268,10 @@ Handle(AIS_InteractiveContext) StaircaseViewController::getAISContext() const {
   return aisContext;
 }
 
-void StaircaseViewController::setAISContext(Handle(AIS_InteractiveContext) const &aisContext) {
+void StaircaseViewController::setAISContext(Handle(AIS_InteractiveContext)
+                                                const &aisContext) {
   this->aisContext = aisContext;
 }
-const Graphic3d_Vec2i& StaircaseViewController::getWindowSize() const {
-    return windowSize;
+Graphic3d_Vec2i const &StaircaseViewController::getWindowSize() const {
+  return windowSize;
 }

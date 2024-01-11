@@ -26,7 +26,7 @@ static char const *toString(Type type) {
   case InitDemoScene: return "InitDemoScene";
   case NextFrame: return "NextFrame";
   case SetStepFileContent: return "SetStepFileContent";
-  default : return "Unknown";
+  default: return "Unknown";
   }
 }
 } // namespace MessageType

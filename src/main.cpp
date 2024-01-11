@@ -9,11 +9,11 @@
 #include <emscripten/html5.h>
 #include <emscripten/threading.h>
 #include <iostream>
+#include <memory>
 #include <opencascade/Standard_Version.hxx>
 #include <optional>
 #include <queue>
 #include <thread>
-#include <memory>
 
 bool arePthreadsEnabled() {
 #ifdef __EMSCRIPTEN_PTHREADS__
