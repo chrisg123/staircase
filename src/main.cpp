@@ -27,6 +27,7 @@ void main_loop(void *arg);
 
 void handleMessages(void *arg);
 
+AppContext *initStaircaseViewer(std::string const &containerId);
 void draw(AppContext &context);
 
 void bootstrap(void *arg);
@@ -53,7 +54,6 @@ std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
 extern "C" void dummyMainLoop() { emscripten_cancel_main_loop(); }
 
 EMSCRIPTEN_KEEPALIVE int main() {
-  AppContext *context = new AppContext;
   std::string occt_ver_str =
       "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
   std::cout << occt_ver_str << std::endl;
@@ -61,19 +61,30 @@ EMSCRIPTEN_KEEPALIVE int main() {
   EM_ASM({ document.getElementById('version').innerHTML = UTF8ToString($0); },
          std::any_cast<std::string>(occt_ver_str).c_str());
 
+  std::string containerId = "staircase-container";
+  AppContext *context = initStaircaseViewer(containerId);
+
+  int const INITIAL_DELAY_MS = 1000;
+  emscripten_async_call(bootstrap, context, INITIAL_DELAY_MS);
+
+  drawCheckerBoard(context->shaderProgram,
+                   context->viewController->getWindowSize());
+
+  return 0;
+}
+
+AppContext *initStaircaseViewer(std::string const &containerId) {
   if (!arePthreadsEnabled()) {
     std::cerr << "Pthreads are required." << std::endl;
-    return 1;
+    return NULL;
   }
-  std::cout << "Pthreads enabled" << std::endl;
+  emscripten_set_main_loop(dummyMainLoop, -1, 0);
 
-  std::string containerId = "staircase-container";
+  AppContext *context = new AppContext();
   context->canvasId = "staircase-canvas";
 
   context->viewController =
       std::make_unique<StaircaseViewController>(context->canvasId);
-
-  emscripten_set_main_loop(dummyMainLoop, -1, 0);
 
   createCanvas(containerId, context->canvasId);
   context->viewController->initWindow();
@@ -94,14 +105,7 @@ EMSCRIPTEN_KEEPALIVE int main() {
       "}");
 
   EM_ASM(Module['noExitRuntime'] = true);
-
-  drawCheckerBoard(context->shaderProgram,
-                   context->viewController->getWindowSize());
-
-  int const INITIAL_DELAY_MS = 1000;
-  emscripten_async_call(bootstrap, context, INITIAL_DELAY_MS);
-
-  return 0;
+  return context;
 }
 
 void bootstrap(void *arg) {
