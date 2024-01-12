@@ -50,6 +50,4 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
 StaircaseViewer::~StaircaseViewer() {}
 
 extern "C" void dummyMainLoop() { emscripten_cancel_main_loop(); }
-void dummyDeleter(StaircaseViewer *) {
-  std::cout << "*** dummyDeleter called" << std::endl;
-}
+void dummyDeleter(StaircaseViewer *) {}
