@@ -3,6 +3,7 @@
 #include "GraphicsUtilities.hpp"
 #include "OCCTUtilities.hpp"
 #include "staircase.hpp"
+#include "StaircaseViewer.hpp"
 #include <any>
 #include <chrono>
 #include <emscripten.h>
@@ -15,13 +16,6 @@
 #include <queue>
 #include <thread>
 
-bool arePthreadsEnabled() {
-#ifdef __EMSCRIPTEN_PTHREADS__
-  return true;
-#else
-  return false;
-#endif
-}
 using DocHandle = Handle(TDocStd_Document);
 void main_loop(void *arg);
 
@@ -51,8 +45,6 @@ std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
   return head;
 }
 
-extern "C" void dummyMainLoop() { emscripten_cancel_main_loop(); }
-
 EMSCRIPTEN_KEEPALIVE int main() {
   std::string occt_ver_str =
       "OCCT Version: " + std::string(OCC_VERSION_COMPLETE);
@@ -62,60 +54,34 @@ EMSCRIPTEN_KEEPALIVE int main() {
          std::any_cast<std::string>(occt_ver_str).c_str());
 
   std::string containerId = "staircase-container";
-  AppContext *context = initStaircaseViewer(containerId);
+
+  auto viewer = StaircaseViewer::Create(containerId);
+
+  if (viewer == nullptr) {
+      std::cerr << "Failed to create StaircaseViewer." << std::endl;
+      return 1;
+  }
 
   int const INITIAL_DELAY_MS = 1000;
-  emscripten_async_call(bootstrap, context, INITIAL_DELAY_MS);
+  emscripten_async_call(bootstrap, viewer.get(), INITIAL_DELAY_MS);
 
+  std::shared_ptr<AppContext> context = viewer->context;
   drawCheckerBoard(context->shaderProgram,
                    context->viewController->getWindowSize());
 
   return 0;
 }
 
-AppContext *initStaircaseViewer(std::string const &containerId) {
-  if (!arePthreadsEnabled()) {
-    std::cerr << "Pthreads are required." << std::endl;
-    return NULL;
-  }
-  emscripten_set_main_loop(dummyMainLoop, -1, 0);
-
-  AppContext *context = new AppContext();
-  context->canvasId = "staircase-canvas";
-
-  context->viewController =
-      std::make_unique<StaircaseViewController>(context->canvasId);
-
-  createCanvas(containerId, context->canvasId);
-  context->viewController->initWindow();
-  setupWebGLContext(context->canvasId);
-  context->viewController->initViewer();
-
-  context->shaderProgram = createShaderProgram(
-      /*vertexShaderSource=*/
-      "attribute vec3 position;"
-      "void main() {"
-      "  gl_Position  = vec4(position, 1.0);"
-      "}",
-      /*fragmentShaderSource=*/
-      "precision mediump float;"
-      "uniform vec4 color;"
-      "void main() {"
-      "  gl_FragColor = color;"
-      "}");
-
-  EM_ASM(Module['noExitRuntime'] = true);
-  return context;
-}
-
 void bootstrap(void *arg) {
-  auto context = static_cast<AppContext *>(arg);
+  auto viewer = static_cast<StaircaseViewer*>(arg);
+  auto context = viewer->context;
   pthread_t worker;
-  pthread_create(&worker, NULL, loadStepFile, context);
+  pthread_create(&worker, NULL, loadStepFile, viewer);
 }
 
 void *loadStepFile(void *arg) {
-  auto context = static_cast<AppContext *>(arg);
+  auto viewer = static_cast<StaircaseViewer*>(arg);
+  auto context = viewer->context;
   std::cout << "loadStepFile" << std::endl;
   std::string stepFileStr = embeddedStepFile;
 
@@ -126,7 +92,7 @@ void *loadStepFile(void *arg) {
   context->pushMessage({MessageType::SetStepFileContent, myData});
 
   emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
-                                              (void *)context);
+                                              context.get());
 
   // Read STEP file and handle the result in the callback
   readStepFile(XCAFApp_Application::GetApplication(), stepFileStr,
@@ -148,7 +114,7 @@ void *loadStepFile(void *arg) {
                      MessageType::NextFrame));
 
                  emscripten_async_run_in_main_runtime_thread(
-                     EM_FUNC_SIG_VI, handleMessages, (void *)context);
+                     EM_FUNC_SIG_VI, handleMessages, context.get());
                });
 
   return NULL;

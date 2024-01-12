@@ -20,6 +20,7 @@ set(SOURCE_FILES
   ${SRC_DIR}/GraphicsUtilities.cpp
   ${SRC_DIR}/OCCTUtilities.cpp
   ${SRC_DIR}/StaircaseViewController.cpp
+  ${SRC_DIR}/StaircaseViewer.cpp
 )
 
 add_executable(staircase ${SOURCE_FILES})
