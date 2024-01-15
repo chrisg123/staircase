@@ -16,7 +16,7 @@ public:
   void initWindow();
   bool initViewer();
   void initPixelScaleRatio();
-  void initDemoScene();
+  void initScene();
   void redrawView();
   void updateView();
   void initStepFile(Handle(TDocStd_Document) aDoc);
@@ -32,6 +32,8 @@ public:
 
   Handle(AIS_InteractiveContext) getAISContext() const;
   void setAISContext(Handle(AIS_InteractiveContext) const &aisContext);
+
+  bool shouldRender;
 
   const Graphic3d_Vec2i& getWindowSize() const;
 private:

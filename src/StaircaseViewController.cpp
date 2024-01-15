@@ -137,8 +137,7 @@ void StaircaseViewController::initPixelScaleRatio() {
   }
 }
 
-void StaircaseViewController::initDemoScene() {
-  std::cout << "StaircaseViewController::initDemoScene" << std::endl;
+void StaircaseViewController::initScene() {
   viewCube = new AIS_ViewCube();
   initPixelScaleRatio();
   viewCube->SetTransformPersistence(new Graphic3d_TransformPers(
@@ -168,7 +167,7 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
 }
 
 void StaircaseViewController::ProcessInput() {
-  if (!view.IsNull()) {
+  if (shouldRender && !view.IsNull()) {
     // Schedule canvas redraw post user input, aligned with animation frame.
     if (++updateRequestCount == 1) {
       emscripten_async_call(onRedrawView, this, -1);

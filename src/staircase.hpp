@@ -11,7 +11,8 @@ enum Type {
   DrawCheckerboard,
   DrawLoadingScreen,
   ReadStepFile,
-  InitDemoScene,
+  InitEmptyScene,
+  InitStepFile,
   NextFrame,
   SetStepFileContent,
 };
@@ -23,7 +24,7 @@ static char const *toString(Type type) {
   case DrawCheckerboard: return "DrawCheckerboard";
   case DrawLoadingScreen: return "DrawLoadingScreen";
   case ReadStepFile: return "ReadStepFile";
-  case InitDemoScene: return "InitDemoScene";
+  case InitEmptyScene: return "InitEmptyScene";
   case NextFrame: return "NextFrame";
   case SetStepFileContent: return "SetStepFileContent";
   default: return "Unknown";
@@ -120,4 +121,23 @@ inline void createCanvas(std::string containerId, std::string canvasId) {
       },
       containerId.c_str(), canvasId.c_str());
 }
+
+template <typename... MessageTypes>
+std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
+  std::shared_ptr<Staircase::Message> head = nullptr;
+  std::shared_ptr<Staircase::Message> current = nullptr;
+
+  auto createAndLink = [&head, &current](MessageType::Type type) {
+    auto newMsg = std::make_shared<Staircase::Message>(type);
+    if (!head) {
+      head = newMsg;
+    } else {
+      current->nextMessage = newMsg;
+    }
+    current = newMsg;
+  };
+  (createAndLink(types), ...);
+  return head;
+}
+
 #endif // STAIRCASE_HPP
