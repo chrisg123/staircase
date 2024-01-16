@@ -8,6 +8,7 @@
 
 class StaircaseViewer {
 public:
+  void createCanvas(std::string containerId, std::string canvasId);
   static std::unique_ptr<StaircaseViewer, void (*)(StaircaseViewer *)>
   Create(std::string const &containerId);
   void initEmptyScene();

@@ -97,30 +97,6 @@ enum class RenderingMode {
   RenderStepFile
 };
 
-inline void createCanvas(std::string containerId, std::string canvasId) {
-  EM_ASM(
-      {
-        var divElement = document.getElementById(UTF8ToString($0));
-
-        if (divElement) {
-          var canvas = document.createElement('canvas');
-          canvas.id = UTF8ToString($1);
-          divElement.appendChild(canvas);
-
-          // Align canvas size with device pixels
-          var computedStyle = window.getComputedStyle(canvas);
-          var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10);
-          var cssHeight =
-              parseInt(computedStyle.getPropertyValue('height'), 10);
-          var devicePixelRatio = window.devicePixelRatio || 1;
-          canvas.width = cssWidth * devicePixelRatio;
-          canvas.height = cssHeight * devicePixelRatio;
-        }
-        // Set the canvas to emscripten Module object
-        Staircase['canvas'] = canvas;
-      },
-      containerId.c_str(), canvasId.c_str());
-}
 
 template <typename... MessageTypes>
 std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
