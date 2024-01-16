@@ -60,6 +60,7 @@ set(EMSCRIPTEN_FLAGS
     " -s INITIAL_MEMORY=33554432"
     " -s NO_DISABLE_EXCEPTION_CATCHING"
     " -s ASSERTIONS"
+    " --extern-post-js ${CMAKE_CURRENT_SOURCE_DIR}/web/staircase-module-post.js"
 
     # NOTE: The following three flags seem incompatible with PTHREAD_POOL_SIZE.
     # An issue should be submitted to the main Emscripten project.

@@ -47,7 +47,7 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
       "  gl_FragColor = color;"
       "}");
 
-  EM_ASM(Module['noExitRuntime'] = true);
+  EM_ASM(Staircase['noExitRuntime'] = true);
 
   context->pushMessage(MessageType::NextFrame); // kick off event loop
 

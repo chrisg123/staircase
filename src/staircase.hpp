@@ -117,7 +117,7 @@ inline void createCanvas(std::string containerId, std::string canvasId) {
           canvas.height = cssHeight * devicePixelRatio;
         }
         // Set the canvas to emscripten Module object
-        Module['canvas'] = canvas;
+        Staircase['canvas'] = canvas;
       },
       containerId.c_str(), canvasId.c_str());
 }
