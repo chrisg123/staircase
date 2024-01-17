@@ -37,5 +37,25 @@
 
         <script async type="text/javascript" src="staircase.js"></script>
 
+        <script>
+            var Staircase = typeof Staircase != "undefined" ? Staircase : {};
+
+            Staircase.onViewerReady = function (viewer) {
+                viewer.displaySplashScreen();
+                let occtVer = viewer.getOCCTVersion();
+
+                document.getElementById("version").innerHTML =
+                    "OCCT Version: " + occtVer;
+                setTimeout(function () {
+                    viewer.initEmptyScene();
+                }, 500);
+                setTimeout(function () {
+                    let demoStepFile = viewer.getDemoStepFile();
+                    document.getElementById("stepText").innerHTML =
+                        demoStepFile;
+                    viewer.loadStepFile(demoStepFile);
+                }, 3000);
+            };
+        </script>
     </body>
 </html>

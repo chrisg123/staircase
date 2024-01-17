@@ -1,49 +1,13 @@
 #include "StaircaseViewer.hpp"
+#include "EmbeddedStepFile.hpp"
 #include "GraphicsUtilities.hpp"
 #include "OCCTUtilities.hpp"
 #include <emscripten/threading.h>
 #include <memory>
 #include <optional>
+#include <opencascade/Standard_Version.hxx>
 
-void StaircaseViewer::createCanvas(std::string containerId, std::string canvasId) {
-  EM_ASM(
-      {
-        var divElement = document.getElementById(UTF8ToString($0));
-
-        if (divElement) {
-          var canvas = document.createElement('canvas');
-          canvas.id = UTF8ToString($1);
-          divElement.appendChild(canvas);
-
-          // Align canvas size with device pixels
-          var computedStyle = window.getComputedStyle(canvas);
-          var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10);
-          var cssHeight =
-              parseInt(computedStyle.getPropertyValue('height'), 10);
-          var devicePixelRatio = window.devicePixelRatio || 1;
-          canvas.width = cssWidth * devicePixelRatio;
-          canvas.height = cssHeight * devicePixelRatio;
-        }
-        // Set the canvas to emscripten Module object
-        Staircase['canvas'] = canvas;
-      },
-      containerId.c_str(), canvasId.c_str());
-}
-
-std::unique_ptr<StaircaseViewer, void (*)(StaircaseViewer *)>
-StaircaseViewer::Create(std::string const &containerId) {
-  if (!arePthreadsEnabled()) {
-    std::cerr << "Pthreads are required." << std::endl;
-    return std::unique_ptr<StaircaseViewer, void (*)(StaircaseViewer *)>(
-        nullptr, dummyDeleter);
-  }
-
-  // Using a custom dummy deleter to manually manage StaircaseViewer's lifetime
-  // while utilizing the managed pointer interface of std::unique_ptr.
-  return std::unique_ptr<StaircaseViewer, void (*)(StaircaseViewer *)>(
-      new StaircaseViewer(containerId), dummyDeleter);
-}
-
+EMSCRIPTEN_KEEPALIVE
 StaircaseViewer::StaircaseViewer(std::string const &containerId) {
 
   emscripten_set_main_loop(dummyMainLoop, -1, 0);
@@ -72,25 +36,67 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
       "  gl_FragColor = color;"
       "}");
 
-  EM_ASM(Staircase['noExitRuntime'] = true);
-
   context->pushMessage(MessageType::NextFrame); // kick off event loop
 
   emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
                                               context.get());
 }
-void StaircaseViewer::initEmptyScene() {
+
+EMSCRIPTEN_KEEPALIVE void StaircaseViewer::displaySplashScreen() {
+  drawCheckerBoard(context->shaderProgram,
+                   context->viewController->getWindowSize());
+}
+
+EMSCRIPTEN_KEEPALIVE std::string StaircaseViewer::getDemoStepFile() {
+  return embeddedStepFile;
+}
+
+EMSCRIPTEN_KEEPALIVE std::string StaircaseViewer::getOCCTVersion() {
+  return std::string(OCC_VERSION_COMPLETE);
+}
+
+EMSCRIPTEN_KEEPALIVE void StaircaseViewer::initEmptyScene() {
   context->pushMessage(
       *chain(MessageType::ClearScreen, MessageType::ClearScreen,
              MessageType::ClearScreen, MessageType::InitEmptyScene,
              MessageType::NextFrame));
 }
-StaircaseViewer::~StaircaseViewer() {}
 
-void StaircaseViewer::loadStepFile(std::string const &stepFileContent) {
+EMSCRIPTEN_KEEPALIVE void
+StaircaseViewer::loadStepFile(std::string const &stepFileContent) {
   this->stepFileContent = stepFileContent;
   pthread_t worker;
   pthread_create(&worker, NULL, StaircaseViewer::_loadStepFile, this);
+}
+
+StaircaseViewer::~StaircaseViewer() {}
+
+void StaircaseViewer::createCanvas(std::string containerId,
+                                   std::string canvasId) {
+  EM_ASM(
+      {
+        if (typeof document == 'undefined') { return; }
+
+        var divElement = document.getElementById(UTF8ToString($0));
+
+        if (divElement) {
+          var canvas = document.createElement('canvas');
+          canvas.id = UTF8ToString($1);
+          divElement.appendChild(canvas);
+
+          // Align canvas size with device pixels
+          var computedStyle = window.getComputedStyle(canvas);
+          var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10);
+          var cssHeight =
+              parseInt(computedStyle.getPropertyValue('height'), 10);
+          var devicePixelRatio = window.devicePixelRatio || 1;
+          canvas.width = cssWidth * devicePixelRatio;
+          canvas.height = cssHeight * devicePixelRatio;
+        }
+        // Set the canvas to emscripten Module object
+        Module.canvas = canvas;
+      },
+      containerId.c_str(), canvasId.c_str());
 }
 
 void *StaircaseViewer::_loadStepFile(void *arg) {
@@ -184,14 +190,7 @@ void StaircaseViewer::handleMessages(void *arg) {
       }
       break;
     }
-    case MessageType::SetStepFileContent: {
-      auto stepFileStr = std::static_pointer_cast<std::string>(message.data);
-      EM_ASM(
-          { document.getElementById('stepText').innerHTML = UTF8ToString($0); },
-          stepFileStr->c_str());
 
-      break;
-    }
     default: std::cout << "Unhandled MessageType::" << std::endl; break;
     }
 
@@ -206,3 +205,13 @@ void StaircaseViewer::handleMessages(void *arg) {
 
 extern "C" void dummyMainLoop() { emscripten_cancel_main_loop(); }
 void dummyDeleter(StaircaseViewer *) {}
+
+EMSCRIPTEN_BINDINGS(staircase) {
+  emscripten::class_<StaircaseViewer>("StaircaseViewer")
+      .constructor<std::string const &>()
+      .function("displaySplashScreen", &StaircaseViewer::displaySplashScreen)
+      .function("initEmptyScene", &StaircaseViewer::initEmptyScene)
+      .function("getDemoStepFile", &StaircaseViewer::getDemoStepFile)
+      .function("getOCCTVersion", &StaircaseViewer::getOCCTVersion)
+      .function("loadStepFile", &StaircaseViewer::loadStepFile);
+}

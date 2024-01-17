@@ -56,17 +56,14 @@ target_link_libraries(
   TKOpenGles)
 
 set(EMSCRIPTEN_FLAGS
-    " -s PTHREAD_POOL_SIZE=4"
-    " -s INITIAL_MEMORY=33554432"
-    " -s NO_DISABLE_EXCEPTION_CATCHING"
-    " -s ASSERTIONS"
+    " --bind"
+    " -sPTHREAD_POOL_SIZE=4"
+    " -sINITIAL_MEMORY=33554432"
+    " -sNO_DISABLE_EXCEPTION_CATCHING"
+    " -sASSERTIONS"
     " --extern-post-js ${CMAKE_CURRENT_SOURCE_DIR}/web/staircase-module-post.js"
-
-    # NOTE: The following three flags seem incompatible with PTHREAD_POOL_SIZE.
-    # An issue should be submitted to the main Emscripten project.
-    # " --extern-post-js ${CMAKE_CURRENT_SOURCE_DIR}/web/staircase-module.js"
-    # " -s EXPORT_NAME='createStaircaseModule'"
-    # " -s MODULARIZE=1"
+    " -sMODULARIZE"
+    " -sEXPORT_NAME='createStaircaseModule'"
 )
 
 string(CONCAT FINAL_EMSCRIPTEN_FLAGS ${EMSCRIPTEN_FLAGS})

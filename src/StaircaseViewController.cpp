@@ -13,15 +13,15 @@
 
 // Update canvas bounding rectangle.
 EM_JS(void, jsUpdateBoundingClientRect, (),
-      { Staircase._myCanvasRect = Staircase.canvas.getBoundingClientRect(); });
+      { Module._myCanvasRect = Module.canvas.getBoundingClientRect(); });
 
 // Get canvas bounding top.
 EM_JS(int, jsGetBoundingClientTop, (),
-      { return Math.round(Staircase._myCanvasRect.top); });
+      { return Math.round(Module._myCanvasRect.top); });
 
 // Get canvas bounding left.
 EM_JS(int, jsGetBoundingClientLeft, (),
-      { return Math.round(Staircase._myCanvasRect.left); });
+      { return Math.round(Module._myCanvasRect.left); });
 
 void StaircaseViewController::initWindow() {
   std::cout << "StaircaseViewController::initWindow()" << std::endl;

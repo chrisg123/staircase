@@ -8,9 +8,12 @@
 
 class StaircaseViewer {
 public:
+  StaircaseViewer(std::string const &containerId);
+
   void createCanvas(std::string containerId, std::string canvasId);
-  static std::unique_ptr<StaircaseViewer, void (*)(StaircaseViewer *)>
-  Create(std::string const &containerId);
+  void displaySplashScreen();
+  std::string getDemoStepFile();
+  std::string getOCCTVersion();
   void initEmptyScene();
   ~StaircaseViewer();
 
@@ -21,7 +24,6 @@ public:
   static void handleMessages(void *arg);
 
 private:
-  StaircaseViewer(std::string const &containerId);
   static void* _loadStepFile(void *args);
 };
 
