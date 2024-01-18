@@ -27,13 +27,24 @@
         <h1>Step File Viewer</h1>
         <div id="staircase-container"></div>
         <div>
-            <input type="file" id="stepFileInput" accept=".stp,.step" />
+            <input
+                type="file"
+                id="stepFileInput"
+                accept=".stp,.step"
+                autocomplete="off"
+            />
             <button id="loadStepFile">Load STEP File</button>
         </div>
 
         <h1>Step File Content</h1>
 
         <textarea id="stepText"></textarea>
+
+        <script>
+            window.onload = function () {
+                document.getElementById("stepFileInput").value = "";
+            };
+        </script>
 
         <script async type="text/javascript" src="staircase.js"></script>
 
