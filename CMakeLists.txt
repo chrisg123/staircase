@@ -4,7 +4,9 @@ project(Staircase)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -pthread -s USE_PTHREADS=1")
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gsource-map -O0 -pthread -s USE_PTHREADS=1")
 
 set(EMSDK_SYSROOT $ENV{EMSDK}/upstream/emscripten/cache/sysroot)
 
@@ -58,7 +60,8 @@ target_link_libraries(
 set(EMSCRIPTEN_FLAGS
     " --bind"
     " -sPTHREAD_POOL_SIZE=4"
-    " -sINITIAL_MEMORY=33554432"
+    " -sINITIAL_MEMORY=67108864"
+    " -sALLOW_MEMORY_GROWTH=1"
     " -sNO_DISABLE_EXCEPTION_CATCHING"
     " -sASSERTIONS"
     " --extern-post-js ${CMAKE_CURRENT_SOURCE_DIR}/web/staircase-module-post.js"
