@@ -163,6 +163,11 @@ if [ ! -f "$favicon" ]; then
     done
 fi
 
+if [ ! -d "${script_dir}/src" ]; then
+    ln -s "${build_dir}/staircase/src" "${script_dir}/src"
+fi
+
 html_file="${script_dir}/web/index.html"
 set -x
 cp "${html_file}" "${build_dir}/staircase/index.html"
+# -*- mode: org -*-
