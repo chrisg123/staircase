@@ -67,6 +67,32 @@
                     viewer.loadStepFile(demoStepFile);
                 }, 3000);
             };
+
+            document.addEventListener("DOMContentLoaded", function () {
+                var stepFileInput = document.getElementById("stepFileInput");
+                var loadStepFileButton =
+                    document.getElementById("loadStepFile");
+                var stepFileContent = "";
+
+                stepFileInput.addEventListener("change", function (event) {
+                    var file = event.target.files[0];
+                    if (file) {
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            stepFileContent = e.target.result;
+                        };
+                        reader.readAsText(file);
+                    }
+                });
+
+                loadStepFileButton.addEventListener("click", function () {
+                    if (stepFileContent) {
+                        Staircase.viewer.loadStepFile(stepFileContent);
+                    } else {
+                        alert("Please select a STEP file first.");
+                    }
+                });
+            });
         </script>
     </body>
 </html>
