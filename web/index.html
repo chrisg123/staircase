@@ -87,7 +87,11 @@
 
                 loadStepFileButton.addEventListener("click", function () {
                     if (stepFileContent) {
-                        Staircase.viewer.loadStepFile(stepFileContent);
+
+                        if(Staircase.viewer.loadStepFile(stepFileContent) == 0) {
+                            document.getElementById("stepText").innerHTML =
+                                stepFileContent;
+                        }
                     } else {
                         alert("Please select a STEP file first.");
                     }

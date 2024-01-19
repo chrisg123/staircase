@@ -5,7 +5,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-
 #include <mutex>
 class StaircaseViewer {
 public:
@@ -19,9 +18,8 @@ public:
   ~StaircaseViewer();
 
   std::shared_ptr<AppContext> context;
-  std::string stepFileContent;
 
-  void loadStepFile(std::string const &stepFileContent);
+  int loadStepFile(std::string const &stepFileContent);
   static void handleMessages(void *arg);
 
   static void* backgroundWorker(void *arg);
@@ -33,6 +31,7 @@ private:
 
   std::string _stepFileContent;
   std::mutex stepFileContentMutex;
+
   static void* _loadStepFile(void *args);
 };
 

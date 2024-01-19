@@ -38,9 +38,11 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
       "}");
 
   context->pushMessage(MessageType::NextFrame); // kick off event loop
-
   emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
                                               context.get());
+
+  pthread_create(&backgroundWorkerThread, NULL,
+                 StaircaseViewer::backgroundWorker, this);
 }
 
 EMSCRIPTEN_KEEPALIVE void StaircaseViewer::displaySplashScreen() {
@@ -63,11 +65,25 @@ EMSCRIPTEN_KEEPALIVE void StaircaseViewer::initEmptyScene() {
              MessageType::NextFrame));
 }
 
-EMSCRIPTEN_KEEPALIVE void
+EMSCRIPTEN_KEEPALIVE int
 StaircaseViewer::loadStepFile(std::string const &stepFileContent) {
-  this->stepFileContent = stepFileContent;
-  pthread_t worker;
-  pthread_create(&worker, NULL, StaircaseViewer::_loadStepFile, this);
+  if (!context->canLoadNewFile()) {
+    std::cout << "Cannot load step file at this moment." << std::endl;
+    return 1;
+  }
+  if (context->setCanLoadNewFile(false) != 0) {
+    std::cerr << "setCanLoadNewFile(false) failed." << std::endl;
+    return 1;
+  }
+  setStepFileContent(stepFileContent);
+  context->pushBackground(MessageType::LoadStepFile);
+
+  if (backgroundWorkerRunning) {
+    backgroundWorkerRunning = true;
+    pthread_create(&backgroundWorkerThread, NULL,
+                   StaircaseViewer::backgroundWorker, this);
+  }
+  return 0;
 }
 void StaircaseViewer::setStepFileContent(std::string const &content) {
   std::lock_guard<std::mutex> lock(stepFileContentMutex);
@@ -118,7 +134,8 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
     context->pushMessage({MessageType::DrawLoadingScreen});
   }
   // Read STEP file and handle the result in the callback
-  readStepFile(XCAFApp_Application::GetApplication(), viewer->stepFileContent,
+  readStepFile(XCAFApp_Application::GetApplication(),
+               viewer->getStepFileContent(),
                [&context](std::optional<Handle(TDocStd_Document)> docOpt) {
                  if (!docOpt.has_value()) {
                    std::cerr << "Failed to read STEP file: DocHandle is empty"
@@ -134,9 +151,6 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
                      *chain(MessageType::ClearScreen, MessageType::ClearScreen,
                             MessageType::ClearScreen, MessageType::InitStepFile,
                             MessageType::NextFrame));
-
-                 emscripten_async_run_in_main_runtime_thread(
-                     EM_FUNC_SIG_VI, handleMessages, context.get());
                });
 
   return nullptr;
