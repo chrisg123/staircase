@@ -59,7 +59,9 @@ target_link_libraries(
 
 set(EMSCRIPTEN_FLAGS
     " --bind"
-    " -sPTHREAD_POOL_SIZE=4"
+    " -sPTHREAD_POOL_SIZE=1"
+    " -sSTACK_SIZE=1MB"
+    " -sSTACK_OVERFLOW_CHECK=1"
     " -sINITIAL_MEMORY=67108864"
     " -sALLOW_MEMORY_GROWTH=1"
     " -sNO_DISABLE_EXCEPTION_CATCHING"
