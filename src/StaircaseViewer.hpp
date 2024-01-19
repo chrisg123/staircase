@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 
+#include <mutex>
 class StaircaseViewer {
 public:
   StaircaseViewer(std::string const &containerId);
@@ -23,7 +24,15 @@ public:
   void loadStepFile(std::string const &stepFileContent);
   static void handleMessages(void *arg);
 
+  static void* backgroundWorker(void *arg);
+  void setStepFileContent(const std::string& content);
+  std::string getStepFileContent();
 private:
+  pthread_t backgroundWorkerThread;
+  bool backgroundWorkerRunning = false;
+
+  std::string _stepFileContent;
+  std::mutex stepFileContentMutex;
   static void* _loadStepFile(void *args);
 };
 

@@ -2,10 +2,11 @@
 #include "EmbeddedStepFile.hpp"
 #include "GraphicsUtilities.hpp"
 #include "OCCTUtilities.hpp"
+#include <atomic>
 #include <emscripten/threading.h>
 #include <memory>
-#include <optional>
 #include <opencascade/Standard_Version.hxx>
+#include <optional>
 
 EMSCRIPTEN_KEEPALIVE
 StaircaseViewer::StaircaseViewer(std::string const &containerId) {
@@ -67,6 +68,15 @@ StaircaseViewer::loadStepFile(std::string const &stepFileContent) {
   this->stepFileContent = stepFileContent;
   pthread_t worker;
   pthread_create(&worker, NULL, StaircaseViewer::_loadStepFile, this);
+}
+void StaircaseViewer::setStepFileContent(std::string const &content) {
+  std::lock_guard<std::mutex> lock(stepFileContentMutex);
+  _stepFileContent = content;
+}
+
+std::string StaircaseViewer::getStepFileContent() {
+  std::lock_guard<std::mutex> lock(stepFileContentMutex);
+  return _stepFileContent;
 }
 
 StaircaseViewer::~StaircaseViewer() {}
@@ -133,6 +143,20 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
 }
 
 std::atomic<bool> isHandlingMessages{false};
+
+void *StaircaseViewer::backgroundWorker(void *arg) {
+  auto viewer = static_cast<StaircaseViewer *>(arg);
+
+  while (true) {
+    std::cout << "Background worker waiting for new messages..." << std::endl;
+    Staircase::Message msg = viewer->context->popBackground();
+
+    std::cout << "Background worker handling mesasge:" << std::endl;
+    StaircaseViewer::_loadStepFile((void *)viewer);
+  }
+  return nullptr;
+}
+
 void StaircaseViewer::handleMessages(void *arg) {
   if (isHandlingMessages.exchange(true)) {
     std::cout << "Function is already being executed, skip this call"
