@@ -14,6 +14,7 @@ enum Type {
   InitEmptyScene,
   InitStepFile,
   NextFrame,
+  LoadStepFile,
 };
 
 static char const *toString(Type type) {
@@ -25,6 +26,7 @@ static char const *toString(Type type) {
   case ReadStepFile: return "ReadStepFile";
   case InitEmptyScene: return "InitEmptyScene";
   case NextFrame: return "NextFrame";
+  case LoadStepFile: return "LoadStepFile";
   default: return "Unknown";
   }
 }
