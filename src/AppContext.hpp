@@ -25,6 +25,26 @@ public:
     std::swap(localQueue, messageQueue);
     return localQueue;
   }
+
+  bool isMessageQueueEmpty() {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    return messageQueue.empty();
+  }
+
+  void pushBackground(const Staircase::Message& msg) {
+    std::unique_lock<std::mutex> lock(backgroundQueueMutex);
+    backgroundQueue.push(msg);
+    cv.notify_one();
+  }
+
+  Staircase::Message popBackground() {
+    std::unique_lock<std::mutex> lock(backgroundQueueMutex);
+    cv.wait(lock, [this]{ return !backgroundQueue.empty(); });
+    Staircase::Message msg = backgroundQueue.front();
+    backgroundQueue.pop();
+    return msg;
+  }
+
   Handle(TDocStd_Document) currentlyViewingDoc;
 
   bool showingSpinner = false;
@@ -49,6 +69,19 @@ public:
     }
   }
 
+  int setCanLoadNewFile(bool value) {
+    if (viewController) {
+      viewController->setCanLoadNewFile(value);
+      return 0; // success
+    }
+    return 1; // failure
+  }
+
+  bool canLoadNewFile() {
+    if (viewController) { return viewController->canLoadNewFile(); }
+    return false;
+  }
+
   Handle(AIS_InteractiveContext) getAISContext() const {
     if (viewController) { return viewController->getAISContext(); }
     return Handle(AIS_InteractiveContext)();
@@ -63,6 +96,10 @@ private:
   Handle(V3d_View) view;
   std::queue<Staircase::Message> messageQueue;
   std::mutex queueMutex;
+
+  std::queue<Staircase::Message> backgroundQueue;
+  std::mutex backgroundQueueMutex;
+  std::condition_variable cv;
 };
 
 #endif // APPCONTEXT_HPP
