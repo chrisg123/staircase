@@ -178,6 +178,16 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
   this->updateView();
 }
 
+void StaircaseViewController::setCanLoadNewFile(bool value) {
+    std::lock_guard<std::mutex> lock(fileLoadMutex);
+    _canLoadNewFile = value;
+}
+
+bool StaircaseViewController::canLoadNewFile() {
+    std::lock_guard<std::mutex> lock(fileLoadMutex);
+    return _canLoadNewFile;
+}
+
 void StaircaseViewController::ProcessInput() {
   if (shouldRender && !view.IsNull()) {
     // Schedule canvas redraw post user input, aligned with animation frame.
@@ -203,6 +213,7 @@ void StaircaseViewController::redrawView() {
     updateRequestCount = 0;
     FlushViewEvents(aisContext, view, true);
   }
+  setCanLoadNewFile(true);
 }
 
 EM_BOOL
