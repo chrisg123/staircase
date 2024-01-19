@@ -132,7 +132,14 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
   return nullptr;
 }
 
+std::atomic<bool> isHandlingMessages{false};
 void StaircaseViewer::handleMessages(void *arg) {
+  if (isHandlingMessages.exchange(true)) {
+    std::cout << "Function is already being executed, skip this call"
+              << std::endl;
+    return;
+  }
+
   auto context = static_cast<AppContext *>(arg);
   auto localQueue = context->drainMessageQueue();
   bool nextFrame = false;
@@ -159,7 +166,10 @@ void StaircaseViewer::handleMessages(void *arg) {
       context->viewController->initStepFile(context->currentlyViewingDoc);
       break;
     case MessageType::NextFrame: {
-      schedNextFrameWith(MessageType::NextFrame);
+
+      if (context->isMessageQueueEmpty()) {
+        schedNextFrameWith(MessageType::NextFrame);
+      } // else { /* Next frame inevitable. */ }
       break;
     }
     case MessageType::DrawLoadingScreen: {
@@ -200,6 +210,7 @@ void StaircaseViewer::handleMessages(void *arg) {
     }
   }
 
+  isHandlingMessages = false;
   if (nextFrame) { emscripten_set_timeout(handleMessages, FPS60, context); }
 }
 
