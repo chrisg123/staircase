@@ -103,9 +103,10 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
   auto viewer = static_cast<StaircaseViewer *>(arg);
   auto context = viewer->context;
 
-  context->showingSpinner = true;
-  context->pushMessage({MessageType::DrawLoadingScreen});
-
+  if (!context->showingSpinner) {
+    context->showingSpinner = true;
+    context->pushMessage({MessageType::DrawLoadingScreen});
+  }
   // Read STEP file and handle the result in the callback
   readStepFile(XCAFApp_Application::GetApplication(), viewer->stepFileContent,
                [&context](std::optional<Handle(TDocStd_Document)> docOpt) {
@@ -115,7 +116,6 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
                    return;
                  }
                  auto aDoc = docOpt.value();
-                 printLabels(aDoc->Main());
                  std::cout << "STEP File Loaded!" << std::endl;
                  context->showingSpinner = false;
                  context->currentlyViewingDoc = aDoc;
