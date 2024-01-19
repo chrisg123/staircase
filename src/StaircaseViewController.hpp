@@ -7,6 +7,8 @@
 #include <opencascade/AIS_ViewCube.hxx>
 #include <opencascade/Prs3d_TextAspect.hxx>
 #include <opencascade/TDocStd_Document.hxx>
+#include <opencascade/AIS_Shape.hxx>
+#include <mutex>
 
 class StaircaseViewController : protected AIS_ViewController {
 public:
@@ -34,8 +36,12 @@ public:
   void setAISContext(Handle(AIS_InteractiveContext) const &aisContext);
 
   bool shouldRender;
-
+  std::vector<Handle(AIS_Shape)> activeShapes;
   const Graphic3d_Vec2i& getWindowSize() const;
+
+  void setCanLoadNewFile(bool value);
+  bool canLoadNewFile();
+
 private:
   std::string canvasId;
   std::string prefixedCanvasId;
@@ -48,6 +54,9 @@ private:
   Handle(Prs3d_TextAspect) textAspect;
   Handle(AIS_ViewCube) viewCube;
   Handle(V3d_View) view;
+
+  std::mutex fileLoadMutex;
+  bool _canLoadNewFile;
 
 };
 #endif // STAIRCASEVIEWCONTROLLER_HPP
