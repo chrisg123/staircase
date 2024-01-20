@@ -129,10 +129,10 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
   auto viewer = static_cast<StaircaseViewer *>(arg);
   auto context = viewer->context;
 
-  if (!context->showingSpinner) {
-    context->showingSpinner = true;
-    context->pushMessage({MessageType::DrawLoadingScreen});
-  }
+
+  context->showingSpinner = true;
+  context->pushMessage({MessageType::DrawLoadingScreen});
+
   // Read STEP file and handle the result in the callback
   readStepFile(XCAFApp_Application::GetApplication(),
                viewer->getStepFileContent(),
