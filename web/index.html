@@ -34,6 +34,7 @@
                 autocomplete="off"
             />
             <button id="loadStepFile">Load STEP File</button>
+            <button id="fitAll">Fit All</button>
         </div>
 
         <h1>Step File Content</h1>
@@ -72,6 +73,8 @@
                 var stepFileInput = document.getElementById("stepFileInput");
                 var loadStepFileButton =
                     document.getElementById("loadStepFile");
+                var fitAllButton =
+                    document.getElementById("fitAll");
                 var stepFileContent = "";
 
                 stepFileInput.addEventListener("change", function (event) {
@@ -95,6 +98,9 @@
                     } else {
                         alert("Please select a STEP file first.");
                     }
+                });
+                fitAllButton.addEventListener("click", function () {
+                    Staircase.viewer.fitAllObjects();
                 });
             });
         </script>

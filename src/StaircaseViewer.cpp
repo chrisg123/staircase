@@ -156,6 +156,10 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
   return nullptr;
 }
 
+void StaircaseViewer::fitAllObjects() {
+  context->viewController->fitAllObjects(true);
+}
+
 std::atomic<bool> isHandlingMessages{false};
 
 void *StaircaseViewer::backgroundWorker(void *arg) {
@@ -262,5 +266,6 @@ EMSCRIPTEN_BINDINGS(staircase) {
       .function("initEmptyScene", &StaircaseViewer::initEmptyScene)
       .function("getDemoStepFile", &StaircaseViewer::getDemoStepFile)
       .function("getOCCTVersion", &StaircaseViewer::getOCCTVersion)
+      .function("fitAllObjects", &StaircaseViewer::fitAllObjects)
       .function("loadStepFile", &StaircaseViewer::loadStepFile);
 }

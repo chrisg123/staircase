@@ -181,6 +181,8 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
     }
     activeShapes.push_back(aisShape);
   }
+
+  this->FitAllAuto(aisContext, view);
   this->updateView();
 }
 
@@ -220,6 +222,15 @@ void StaircaseViewController::redrawView() {
     FlushViewEvents(aisContext, view, true);
   }
   setCanLoadNewFile(true);
+}
+
+void StaircaseViewController::fitAllObjects(bool withAuto) {
+  if (withAuto) {
+    this->FitAllAuto(aisContext, view);
+  } else {
+    view->FitAll(0.01, false);
+  }
+  this->updateView();
 }
 
 EM_BOOL
