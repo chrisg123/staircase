@@ -20,4 +20,6 @@ void readStepFile(
     std::function<void(std::optional<Handle(TDocStd_Document)>)> callback);
 
 std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document) const aDoc);
+std::optional<Quantity_Color> getShapeColor(Handle(TDocStd_Document) const aDoc,
+                                            TopoDS_Shape const shape);
 #endif

@@ -9,6 +9,7 @@
 #include <opencascade/TDF_ChildIterator.hxx>
 #include <opencascade/TDataStd_Name.hxx>
 #include <opencascade/TDocStd_Document.hxx>
+#include <opencascade/XCAFDoc_ColorTool.hxx>
 #include <opencascade/XCAFDoc_ShapeTool.hxx>
 
 std::optional<Handle(TDocStd_Document)>
@@ -77,10 +78,24 @@ void readStepFile(
   callback(docOpt);
 }
 
+std::optional<Quantity_Color> getShapeColor(Handle(TDocStd_Document) const aDoc,
+                                       TopoDS_Shape const shape) {
+  Handle(XCAFDoc_ColorTool) colorTool =
+      XCAFDoc_DocumentTool::ColorTool(aDoc->Main());
+
+  Quantity_Color color;
+  if (colorTool->GetColor(shape, XCAFDoc_ColorGen, color) ||
+      colorTool->GetColor(shape, XCAFDoc_ColorCurv, color) ||
+      colorTool->GetColor(shape, XCAFDoc_ColorSurf, color)) {
+    return color;
+  }
+
+  return std::nullopt;
+}
+
 std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document)
                                                const aDoc) {
   std::vector<TopoDS_Shape> shapes;
-
   TDF_Label mainLabel = aDoc->Main();
   Handle(XCAFDoc_ShapeTool) shapeTool =
       XCAFDoc_DocumentTool::ShapeTool(mainLabel);

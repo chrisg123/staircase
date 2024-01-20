@@ -173,6 +173,12 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
     aisContext->SetDisplayMode(aisShape, AIS_SHADED_MODE, Standard_True);
     aisContext->Display(aisShape, Standard_True);
 
+    std::optional<Quantity_Color> optColor = getShapeColor(aDoc, shape);
+
+    if (optColor.has_value()) {
+      Quantity_Color aColor = optColor.value();
+      aisContext->SetColor(aisShape, aColor, Standard_True);
+    }
     activeShapes.push_back(aisShape);
   }
   this->updateView();
