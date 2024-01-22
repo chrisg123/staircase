@@ -82,6 +82,17 @@ void StaircaseViewController::initWindow() {
   emscripten_set_click_callback      (canvasTarget, this, useCapture, mouseCallback);
   emscripten_set_mouseenter_callback (canvasTarget, this, useCapture, mouseCallback);
   emscripten_set_wheel_callback      (canvasTarget, this, useCapture, wheelCallback);
+
+  emscripten_set_touchstart_callback (canvasTarget, this, useCapture, touchCallback);
+  emscripten_set_touchend_callback   (canvasTarget, this, useCapture, touchCallback);
+  emscripten_set_touchmove_callback  (canvasTarget, this, useCapture, touchCallback);
+  emscripten_set_touchcancel_callback(canvasTarget, this, useCapture, touchCallback);
+
+  emscripten_set_keydown_callback    (canvasTarget, this, useCapture, keyDownCallback);
+  emscripten_set_keyup_callback      (canvasTarget, this, useCapture, keyUpCallback);
+
+  emscripten_set_focusout_callback   (canvasTarget, this, useCapture, focusCallback);
+
   // clang-format on
 }
 
