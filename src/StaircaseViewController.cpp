@@ -49,6 +49,11 @@ void StaircaseViewController::initWindow() {
         eventType, event);
   };
 
+  auto focusCallback = [](int eventType, EmscriptenFocusEvent const *event,
+                          void *userData) -> EM_BOOL {
+    return static_cast<StaircaseViewController *>(userData)->onFocusEvent(
+        eventType, event);
+  };
 
   auto resizeCallback = [](int eventType, EmscriptenUiEvent const *event,
                            void *userData) -> EM_BOOL {
@@ -277,6 +282,21 @@ StaircaseViewController::onTouchEvent(int eventType,
 
   Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast(view->Window());
   return aWindow->ProcessTouchEvent(*this, eventType, event) ? EM_TRUE
+                                                             : EM_FALSE;
+}
+
+EM_BOOL
+StaircaseViewController::onFocusEvent(int eventType,
+                                      EmscriptenFocusEvent const *event) {
+  if (view.IsNull() ||
+      (eventType != EMSCRIPTEN_EVENT_FOCUS &&
+       eventType != EMSCRIPTEN_EVENT_FOCUSIN // about to receive focus
+       && eventType != EMSCRIPTEN_EVENT_FOCUSOUT)) {
+    return EM_FALSE;
+  }
+
+  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast(view->Window());
+  return aWindow->ProcessFocusEvent(*this, eventType, event) ? EM_TRUE
                                                              : EM_FALSE;
 }
 

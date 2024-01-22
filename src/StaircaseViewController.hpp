@@ -28,6 +28,7 @@ public:
   EM_BOOL onWheelEvent(int eventType, EmscriptenWheelEvent const *event);
   EM_BOOL onResizeEvent(int eventType, EmscriptenUiEvent const *event);
   EM_BOOL onTouchEvent(int eventType, EmscriptenTouchEvent const *event);
+  EM_BOOL onFocusEvent(int eventType, const EmscriptenFocusEvent* event);
 
   static void onRedrawView(void *view);
   virtual void ProcessInput() override;
