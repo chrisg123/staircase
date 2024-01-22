@@ -9,6 +9,7 @@
 #include <opencascade/AIS_ViewCube.hxx>
 #include <opencascade/Prs3d_TextAspect.hxx>
 #include <opencascade/TDocStd_Document.hxx>
+#include <opencascade/Aspect_VKey.hxx>
 
 class StaircaseViewController : protected AIS_ViewController {
 public:
@@ -29,9 +30,13 @@ public:
   EM_BOOL onWheelEvent(int eventType, EmscriptenWheelEvent const *event);
   EM_BOOL onResizeEvent(int eventType, EmscriptenUiEvent const *event);
   EM_BOOL onTouchEvent(int eventType, EmscriptenTouchEvent const *event);
-  EM_BOOL onFocusEvent(int eventType, const EmscriptenFocusEvent* event);
-  EM_BOOL onKeyDownEvent(int eventType, const EmscriptenKeyboardEvent* event);
-  EM_BOOL onKeyUpEvent (int eventType, const EmscriptenKeyboardEvent* event);
+  EM_BOOL onFocusEvent(int eventType, EmscriptenFocusEvent const *event);
+  EM_BOOL onKeyDownEvent(int eventType, EmscriptenKeyboardEvent const *event);
+  EM_BOOL onKeyUpEvent(int eventType, EmscriptenKeyboardEvent const *event);
+
+  virtual void KeyDown(Aspect_VKey theKey, double theTime,
+                       double thePressure) override;
+  virtual void KeyUp(Aspect_VKey theKey, double theTime) override;
 
   static void onRedrawView(void *view);
   virtual void ProcessInput() override;
@@ -64,5 +69,12 @@ private:
 
   std::mutex fileLoadMutex;
   bool _canLoadNewFile;
+
+  NCollection_DataMap<unsigned int, Aspect_VKey> navKeyMap;
+
+  bool navigationKeyModifierSwitch(unsigned int modifOld, unsigned int modifNew,
+                                   double timeStamp);
+
+  bool processKeyPress (Aspect_VKey theKey);
 };
 #endif // STAIRCASEVIEWCONTROLLER_HPP

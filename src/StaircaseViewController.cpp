@@ -56,7 +56,7 @@ void StaircaseViewController::initWindow() {
   };
 
   auto keyDownCallback = [](int eventType, EmscriptenKeyboardEvent const *event,
-                          void *userData) -> EM_BOOL {
+                            void *userData) -> EM_BOOL {
     return static_cast<StaircaseViewController *>(userData)->onKeyDownEvent(
         eventType, event);
   };
@@ -328,28 +328,72 @@ StaircaseViewController::onFocusEvent(int eventType,
                                                              : EM_FALSE;
 }
 
-EM_BOOL StaircaseViewController::onKeyDownEvent (int eventType, const EmscriptenKeyboardEvent* event)
-{
-  if (view.IsNull()
-   || eventType != EMSCRIPTEN_EVENT_KEYDOWN)
-  {
+EM_BOOL
+StaircaseViewController::onKeyDownEvent(int eventType,
+                                        EmscriptenKeyboardEvent const *event) {
+  if (view.IsNull() || eventType != EMSCRIPTEN_EVENT_KEYDOWN) {
     return EM_FALSE;
   }
-
-  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast (view->Window());
-  return aWindow->ProcessKeyEvent (*this, eventType, event) ? EM_TRUE : EM_FALSE;
+  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast(view->Window());
+  return aWindow->ProcessKeyEvent(*this, eventType, event) ? EM_TRUE : EM_FALSE;
 }
 
-EM_BOOL StaircaseViewController::onKeyUpEvent (int eventType, const EmscriptenKeyboardEvent* event)
-{
-  if (view.IsNull()
-   || eventType != EMSCRIPTEN_EVENT_KEYUP)
-  {
-    return EM_FALSE;
+void StaircaseViewController::KeyDown(Aspect_VKey theKey, double theTime,
+                                      double thePressure) {
+  unsigned int const aModifOld = myKeys.Modifiers();
+  AIS_ViewController::KeyDown(theKey, theTime, thePressure);
+
+  unsigned int const aModifNew = myKeys.Modifiers();
+  if (aModifNew != aModifOld &&
+      navigationKeyModifierSwitch(aModifOld, aModifNew, theTime)) {
+    // modifier key just pressed
   }
 
-  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast (view->Window());
-  return aWindow->ProcessKeyEvent (*this, eventType, event) ? EM_TRUE : EM_FALSE;
+  Aspect_VKey anAction = Aspect_VKey_UNKNOWN;
+  if (navKeyMap.Find(theKey | myKeys.Modifiers(), anAction) &&
+      anAction != Aspect_VKey_UNKNOWN) {
+    AIS_ViewController::KeyDown(anAction, theTime, thePressure);
+  }
+}
+
+EM_BOOL
+StaircaseViewController::onKeyUpEvent(int eventType,
+                                      EmscriptenKeyboardEvent const *event) {
+  if (view.IsNull() || eventType != EMSCRIPTEN_EVENT_KEYUP) { return EM_FALSE; }
+
+  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast(view->Window());
+  return aWindow->ProcessKeyEvent(*this, eventType, event) ? EM_TRUE : EM_FALSE;
+}
+
+void StaircaseViewController::KeyUp(Aspect_VKey theKey, double theTime) {
+  unsigned int const aModifOld = myKeys.Modifiers();
+  AIS_ViewController::KeyUp(theKey, theTime);
+
+  Aspect_VKey anAction = Aspect_VKey_UNKNOWN;
+  if (navKeyMap.Find(theKey | myKeys.Modifiers(), anAction) &&
+      anAction != Aspect_VKey_UNKNOWN) {
+    AIS_ViewController::KeyUp(anAction, theTime);
+    processKeyPress(anAction);
+  }
+
+  unsigned int const aModifNew = myKeys.Modifiers();
+  if (aModifNew != aModifOld &&
+      navigationKeyModifierSwitch(aModifOld, aModifNew, theTime)) {
+    // modifier key released
+  }
+
+  processKeyPress(theKey | aModifNew);
+}
+
+bool StaircaseViewController::processKeyPress(Aspect_VKey theKey) {
+  switch (theKey) {
+  case Aspect_VKey_F: {
+    view->FitAll(0.01, false);
+    this->updateView();
+    return true;
+  }
+  }
+  return false;
 }
 
 EM_BOOL
@@ -381,6 +425,30 @@ StaircaseViewController::onResizeEvent(int eventType,
     view->Redraw();
   }
   return EM_TRUE;
+}
+
+bool StaircaseViewController::navigationKeyModifierSwitch(
+    unsigned int theModifOld, unsigned int theModifNew, double theTimeStamp) {
+  bool hasActions = false;
+  for (unsigned int aKeyIter = 0; aKeyIter < Aspect_VKey_ModifiersLower;
+       ++aKeyIter) {
+    if (!myKeys.IsKeyDown(aKeyIter)) { continue; }
+
+    Aspect_VKey anActionOld = Aspect_VKey_UNKNOWN,
+                anActionNew = Aspect_VKey_UNKNOWN;
+    navKeyMap.Find(aKeyIter | theModifOld, anActionOld);
+    navKeyMap.Find(aKeyIter | theModifNew, anActionNew);
+    if (anActionOld == anActionNew) { continue; }
+
+    if (anActionOld != Aspect_VKey_UNKNOWN) {
+      myKeys.KeyUp(anActionOld, theTimeStamp);
+    }
+    if (anActionNew != Aspect_VKey_UNKNOWN) {
+      hasActions = true;
+      myKeys.KeyDown(anActionNew, theTimeStamp);
+    }
+  }
+  return hasActions;
 }
 
 char const *StaircaseViewController::getCanvasTag() {
