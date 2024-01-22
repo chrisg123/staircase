@@ -26,6 +26,7 @@ public:
   void setStepFileContent(const std::string& content);
   std::string getStepFileContent();
   void fitAllObjects ();
+  void removeAllObjects();
 private:
   pthread_t backgroundWorkerThread;
   bool backgroundWorkerRunning = false;

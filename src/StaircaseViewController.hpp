@@ -22,6 +22,7 @@ public:
   void redrawView();
   void updateView();
   void fitAllObjects(bool withAuto);
+  void removeAllObjects();
   void initStepFile(Handle(TDocStd_Document) aDoc);
   char const *getCanvasTag();
   EM_BOOL onMouseEvent(int eventType, EmscriptenMouseEvent const *event);

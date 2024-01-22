@@ -108,6 +108,8 @@ void StaircaseViewer::createCanvas(std::string containerId,
         if (divElement) {
           var canvas = document.createElement('canvas');
           canvas.id = UTF8ToString($1);
+          canvas.tabIndex = -1;
+          canvas.oncontextmenu = function(event) { event.preventDefault(); };
           divElement.appendChild(canvas);
 
           // Align canvas size with device pixels
@@ -158,6 +160,11 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
 
 void StaircaseViewer::fitAllObjects() {
   context->viewController->fitAllObjects(true);
+}
+
+void StaircaseViewer::removeAllObjects()
+{
+  context->viewController->removeAllObjects();
 }
 
 std::atomic<bool> isHandlingMessages{false};
@@ -267,5 +274,6 @@ EMSCRIPTEN_BINDINGS(staircase) {
       .function("getDemoStepFile", &StaircaseViewer::getDemoStepFile)
       .function("getOCCTVersion", &StaircaseViewer::getOCCTVersion)
       .function("fitAllObjects", &StaircaseViewer::fitAllObjects)
+      .function("removeAllObjects", &StaircaseViewer::removeAllObjects)
       .function("loadStepFile", &StaircaseViewer::loadStepFile);
 }

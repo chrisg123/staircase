@@ -35,6 +35,7 @@
             />
             <button id="loadStepFile">Load STEP File</button>
             <button id="fitAll">Fit All</button>
+            <button id="removeAll">Remove All</button>
         </div>
 
         <h1>Step File Content</h1>
@@ -75,6 +76,8 @@
                     document.getElementById("loadStepFile");
                 var fitAllButton =
                     document.getElementById("fitAll");
+                var removeAllButton =
+                    document.getElementById("removeAll");
                 var stepFileContent = "";
 
                 stepFileInput.addEventListener("change", function (event) {
@@ -101,6 +104,9 @@
                 });
                 fitAllButton.addEventListener("click", function () {
                     Staircase.viewer.fitAllObjects();
+                });
+                removeAllButton.addEventListener("click", function () {
+                    Staircase.viewer.removeAllObjects();
                 });
             });
         </script>
