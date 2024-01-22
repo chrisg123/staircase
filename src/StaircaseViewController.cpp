@@ -2,6 +2,7 @@
 #include "AppContext.hpp"
 #include "OCCTUtilities.hpp"
 #include "staircase.hpp"
+#include <AIS_ViewCube.hxx>
 #include <Wasm_Window.hxx>
 #include <opencascade/AIS_InteractiveContext.hxx>
 #include <opencascade/AIS_Shape.hxx>
@@ -130,7 +131,7 @@ void StaircaseViewController::initPixelScaleRatio() {
         (unsigned int)(96.0 * devicePixelRatio + 0.5);
   }
   if (!aisContext.IsNull()) {
-    aisContext->SetPixelTolerance((int(devicePixelRatio) * 0.6));
+    aisContext->SetPixelTolerance((int(devicePixelRatio) * 6.0));
     if (!viewCube.IsNull()) {
       static double const THE_CUBE_SIZE = 60.0;
       viewCube->SetSize(devicePixelRatio * THE_CUBE_SIZE, false);
@@ -165,8 +166,8 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
   }
 
   for (auto const &shape : activeShapes) {
-    aisContext->Remove (shape, false);
-    aisContext->Erase (shape, false);
+    aisContext->Remove(shape, false);
+    aisContext->Erase(shape, false);
   }
   if (!activeShapes.empty()) {
     activeShapes.clear();
@@ -194,13 +195,13 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
 }
 
 void StaircaseViewController::setCanLoadNewFile(bool value) {
-    std::lock_guard<std::mutex> lock(fileLoadMutex);
-    _canLoadNewFile = value;
+  std::lock_guard<std::mutex> lock(fileLoadMutex);
+  _canLoadNewFile = value;
 }
 
 bool StaircaseViewController::canLoadNewFile() {
-    std::lock_guard<std::mutex> lock(fileLoadMutex);
-    return _canLoadNewFile;
+  std::lock_guard<std::mutex> lock(fileLoadMutex);
+  return _canLoadNewFile;
 }
 
 void StaircaseViewController::ProcessInput() {

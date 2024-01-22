@@ -4,11 +4,11 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/html5.h>
+#include <mutex>
+#include <opencascade/AIS_Shape.hxx>
 #include <opencascade/AIS_ViewCube.hxx>
 #include <opencascade/Prs3d_TextAspect.hxx>
 #include <opencascade/TDocStd_Document.hxx>
-#include <opencascade/AIS_Shape.hxx>
-#include <mutex>
 
 class StaircaseViewController : protected AIS_ViewController {
 public:
@@ -40,7 +40,7 @@ public:
 
   bool shouldRender;
   std::vector<Handle(AIS_Shape)> activeShapes;
-  const Graphic3d_Vec2i& getWindowSize() const;
+  Graphic3d_Vec2i const &getWindowSize() const;
 
   void setCanLoadNewFile(bool value);
   bool canLoadNewFile();
@@ -60,6 +60,5 @@ private:
 
   std::mutex fileLoadMutex;
   bool _canLoadNewFile;
-
 };
 #endif // STAIRCASEVIEWCONTROLLER_HPP
