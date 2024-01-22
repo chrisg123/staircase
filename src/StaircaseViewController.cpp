@@ -55,6 +55,18 @@ void StaircaseViewController::initWindow() {
         eventType, event);
   };
 
+  auto keyDownCallback = [](int eventType, EmscriptenKeyboardEvent const *event,
+                          void *userData) -> EM_BOOL {
+    return static_cast<StaircaseViewController *>(userData)->onKeyDownEvent(
+        eventType, event);
+  };
+
+  auto keyUpCallback = [](int eventType, EmscriptenKeyboardEvent const *event,
+                          void *userData) -> EM_BOOL {
+    return static_cast<StaircaseViewController *>(userData)->onKeyUpEvent(
+        eventType, event);
+  };
+
   auto resizeCallback = [](int eventType, EmscriptenUiEvent const *event,
                            void *userData) -> EM_BOOL {
     return static_cast<StaircaseViewController *>(userData)->onResizeEvent(
@@ -298,6 +310,30 @@ StaircaseViewController::onFocusEvent(int eventType,
   Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast(view->Window());
   return aWindow->ProcessFocusEvent(*this, eventType, event) ? EM_TRUE
                                                              : EM_FALSE;
+}
+
+EM_BOOL StaircaseViewController::onKeyDownEvent (int eventType, const EmscriptenKeyboardEvent* event)
+{
+  if (view.IsNull()
+   || eventType != EMSCRIPTEN_EVENT_KEYDOWN)
+  {
+    return EM_FALSE;
+  }
+
+  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast (view->Window());
+  return aWindow->ProcessKeyEvent (*this, eventType, event) ? EM_TRUE : EM_FALSE;
+}
+
+EM_BOOL StaircaseViewController::onKeyUpEvent (int eventType, const EmscriptenKeyboardEvent* event)
+{
+  if (view.IsNull()
+   || eventType != EMSCRIPTEN_EVENT_KEYUP)
+  {
+    return EM_FALSE;
+  }
+
+  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast (view->Window());
+  return aWindow->ProcessKeyEvent (*this, eventType, event) ? EM_TRUE : EM_FALSE;
 }
 
 EM_BOOL

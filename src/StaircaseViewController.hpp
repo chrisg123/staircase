@@ -29,6 +29,8 @@ public:
   EM_BOOL onResizeEvent(int eventType, EmscriptenUiEvent const *event);
   EM_BOOL onTouchEvent(int eventType, EmscriptenTouchEvent const *event);
   EM_BOOL onFocusEvent(int eventType, const EmscriptenFocusEvent* event);
+  EM_BOOL onKeyDownEvent(int eventType, const EmscriptenKeyboardEvent* event);
+  EM_BOOL onKeyUpEvent (int eventType, const EmscriptenKeyboardEvent* event);
 
   static void onRedrawView(void *view);
   virtual void ProcessInput() override;
