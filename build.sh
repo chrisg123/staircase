@@ -3,7 +3,7 @@
 set -e
 ver=0.1.0
 verbose=0
-dist=1
+dist=0
 
 for arg in "$@"; do
     if [ "${arg}" == "--verbose" ] || [ "${arg}" == "-v" ]; then
@@ -152,7 +152,19 @@ fi
 echo "#endif // EMBEDDED_STEP_FILE_H" >>"${resource_header}"
 
 pushd build/staircase
-cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
+
+extra_cmake_flags=()
+if [ "$dist" -eq 1 ]; then
+    extra_cmake_flags+=("-DDIST_BUILD=ON")
+else
+    extra_cmake_flags+=("-DDIST_BUILD=OFF")
+fi
+
+if [ "$verbose" -eq 1 ]; then
+    extra_cmake_flags+=("-DCMAKE_VERBOSE_MAKEFILE=ON")
+fi
+
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}" "${extra_cmake_flags[@]}"
 make -j"${num_cores}" all
 popd
 
@@ -190,7 +202,7 @@ if [ "$dist" -eq 1 ]; then
     cp "${build_dir}/staircase/staircase.wasm" "${stage_dir}/staircase/"
     cp "${build_dir}/staircase/staircase.worker.js" "${stage_dir}/staircase/"
 
-    tar -cvf "${dist_dir}/staircase-${ver}.tar" -C "${stage_dir}" "staircase"
+    tar -czvf "${dist_dir}/staircase-${ver}.tar.gz" -C "${stage_dir}" "staircase"
     pushd "${stage_dir}"
     zip -r "${dist_dir}/staircase-${ver}.zip" "staircase"
     popd

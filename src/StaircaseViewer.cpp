@@ -1,5 +1,4 @@
 #include "StaircaseViewer.hpp"
-#include "EmbeddedStepFile.hpp"
 #include "GraphicsUtilities.hpp"
 #include "OCCTUtilities.hpp"
 #include <atomic>
@@ -7,6 +6,9 @@
 #include <memory>
 #include <opencascade/Standard_Version.hxx>
 #include <optional>
+#ifndef DIST_BUILD
+#include "EmbeddedStepFile.hpp"
+#endif
 
 EMSCRIPTEN_KEEPALIVE
 StaircaseViewer::StaircaseViewer(std::string const &containerId) {
@@ -51,7 +53,12 @@ EMSCRIPTEN_KEEPALIVE void StaircaseViewer::displaySplashScreen() {
 }
 
 EMSCRIPTEN_KEEPALIVE std::string StaircaseViewer::getDemoStepFile() {
+#ifndef DIST_BUILD
   return embeddedStepFile;
+#else
+  std::cout << "Demo file not available in the distribution build." << std::endl;
+  return "";
+#endif
 }
 
 EMSCRIPTEN_KEEPALIVE std::string StaircaseViewer::getOCCTVersion() {
@@ -67,6 +74,10 @@ EMSCRIPTEN_KEEPALIVE void StaircaseViewer::initEmptyScene() {
 
 EMSCRIPTEN_KEEPALIVE int
 StaircaseViewer::loadStepFile(std::string const &stepFileContent) {
+  if (stepFileContent.empty()) {
+    std::cerr << "Step file content is empty." << std::endl;
+    return 1;
+  }
   if (!context->canLoadNewFile()) {
     std::cout << "Cannot load step file at this moment." << std::endl;
     return 1;
@@ -131,7 +142,6 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
   auto viewer = static_cast<StaircaseViewer *>(arg);
   auto context = viewer->context;
 
-
   context->showingSpinner = true;
   context->pushMessage({MessageType::DrawLoadingScreen});
 
@@ -142,6 +152,11 @@ void *StaircaseViewer::_loadStepFile(void *arg) {
                  if (!docOpt.has_value()) {
                    std::cerr << "Failed to read STEP file: DocHandle is empty"
                              << std::endl;
+                   context->showingSpinner = false;
+                   context->pushMessage(*chain(
+                       MessageType::ClearScreen, MessageType::ClearScreen,
+                       MessageType::ClearScreen, MessageType::InitEmptyScene,
+                       MessageType::NextFrame));
                    return;
                  }
                  auto aDoc = docOpt.value();
@@ -162,8 +177,7 @@ void StaircaseViewer::fitAllObjects() {
   context->viewController->fitAllObjects(true);
 }
 
-void StaircaseViewer::removeAllObjects()
-{
+void StaircaseViewer::removeAllObjects() {
   context->viewController->removeAllObjects();
 }
 
@@ -173,10 +187,7 @@ void *StaircaseViewer::backgroundWorker(void *arg) {
   auto viewer = static_cast<StaircaseViewer *>(arg);
 
   while (true) {
-    std::cout << "Background worker waiting for new messages..." << std::endl;
     Staircase::Message msg = viewer->context->popBackground();
-
-    std::cout << "Background worker handling mesasge:" << std::endl;
     StaircaseViewer::_loadStepFile((void *)viewer);
   }
   return nullptr;
@@ -184,8 +195,6 @@ void *StaircaseViewer::backgroundWorker(void *arg) {
 
 void StaircaseViewer::handleMessages(void *arg) {
   if (isHandlingMessages.exchange(true)) {
-    std::cout << "Function is already being executed, skip this call"
-              << std::endl;
     return;
   }
 

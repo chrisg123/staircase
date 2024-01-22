@@ -97,7 +97,6 @@ void StaircaseViewController::initWindow() {
 }
 
 bool StaircaseViewController::initViewer() {
-  std::cout << "StaircaseViewController::initViewer()" << std::endl;
   Handle(Aspect_DisplayConnection) aDisp;
   Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
   aDriver->ChangeOptions().buffersNoSwap = true;

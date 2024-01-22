@@ -54,30 +54,32 @@
             var Staircase = typeof Staircase != "undefined" ? Staircase : {};
 
             Staircase.onViewerReady = function (viewer) {
-                viewer.displaySplashScreen();
                 let occtVer = viewer.getOCCTVersion();
-
                 document.getElementById("version").innerHTML =
                     "OCCT Version: " + occtVer;
+
+                viewer.displaySplashScreen();
+
                 setTimeout(function () {
                     viewer.initEmptyScene();
                 }, 500);
-                setTimeout(function () {
-                    let demoStepFile = viewer.getDemoStepFile();
-                    document.getElementById("stepText").innerHTML =
-                        demoStepFile;
-                    viewer.loadStepFile(demoStepFile);
-                }, 3000);
+
+                let demoStepFile = viewer.getDemoStepFile();
+                if (demoStepFile != "") {
+                    setTimeout(function () {
+                        document.getElementById("stepText").innerHTML =
+                            demoStepFile;
+                        viewer.loadStepFile(demoStepFile);
+                    }, 3000);
+                }
             };
 
             document.addEventListener("DOMContentLoaded", function () {
                 var stepFileInput = document.getElementById("stepFileInput");
                 var loadStepFileButton =
                     document.getElementById("loadStepFile");
-                var fitAllButton =
-                    document.getElementById("fitAll");
-                var removeAllButton =
-                    document.getElementById("removeAll");
+                var fitAllButton = document.getElementById("fitAll");
+                var removeAllButton = document.getElementById("removeAll");
                 var stepFileContent = "";
 
                 stepFileInput.addEventListener("change", function (event) {
@@ -93,8 +95,9 @@
 
                 loadStepFileButton.addEventListener("click", function () {
                     if (stepFileContent) {
-
-                        if(Staircase.viewer.loadStepFile(stepFileContent) == 0) {
+                        if (
+                            Staircase.viewer.loadStepFile(stepFileContent) == 0
+                        ) {
                             document.getElementById("stepText").innerHTML =
                                 stepFileContent;
                         }

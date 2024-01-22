@@ -4,9 +4,9 @@ project(Staircase)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+option(DIST_BUILD "Build for distribution" OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gsource-map -O0 -pthread -s USE_PTHREADS=1")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -s USE_PTHREADS=1 -Wno-pthreads-mem-growth")
 
 set(EMSDK_SYSROOT $ENV{EMSDK}/upstream/emscripten/cache/sysroot)
 
@@ -61,15 +61,27 @@ set(EMSCRIPTEN_FLAGS
     " --bind"
     " -sPTHREAD_POOL_SIZE=1"
     " -sSTACK_SIZE=1MB"
-    " -sSTACK_OVERFLOW_CHECK=1"
     " -sINITIAL_MEMORY=67108864"
     " -sALLOW_MEMORY_GROWTH=1"
     " -sNO_DISABLE_EXCEPTION_CATCHING"
-    " -sASSERTIONS"
     " --extern-post-js ${CMAKE_CURRENT_SOURCE_DIR}/web/staircase-module-post.js"
     " -sMODULARIZE"
     " -sEXPORT_NAME='createStaircaseModule'"
 )
+
+if(DIST_BUILD)
+  add_definitions(-DDIST_BUILD)
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gsource-map -O0")
+  set(EMSCRIPTEN_FLAGS
+    "${EMSCRIPTEN_FLAGS}"
+    " -sSTACK_OVERFLOW_CHECK=1"
+    " -sASSERTIONS"
+  )
+endif()
+
 
 string(CONCAT FINAL_EMSCRIPTEN_FLAGS ${EMSCRIPTEN_FLAGS})
 

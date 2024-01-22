@@ -1,6 +1,12 @@
 all:
 	./build.sh
 
+verbose:
+	./build.sh --verbose
+
+dist-verbose:
+	./build.sh --dist --verbose
+
 clean:
 	rm -rf build/staircase
 
@@ -23,8 +29,7 @@ reset: clean-all
 demo:
 	./run_demo.sh
 
-
 dist:
 	./build.sh --dist
 
-.PHONY: clean cleanall demo all dist
+.PHONY: clean cleanall demo all verbose dist
