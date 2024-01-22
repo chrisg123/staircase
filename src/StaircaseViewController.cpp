@@ -24,11 +24,11 @@ EM_JS(int, jsGetBoundingClientLeft, (),
       { return Math.round(Module._myCanvasRect.left); });
 
 void StaircaseViewController::initWindow() {
-  std::cout << "StaircaseViewController::initWindow()" << std::endl;
   devicePixelRatio = emscripten_get_device_pixel_ratio();
 
   auto canvasTarget = getCanvasTag();
   auto windowTarget = EMSCRIPTEN_EVENT_TARGET_WINDOW;
+  const EM_BOOL useCapture = EM_TRUE;
 
   auto mouseCallback = [](int eventType, EmscriptenMouseEvent const *event,
                           void *userData) -> EM_BOOL {
@@ -42,6 +42,13 @@ void StaircaseViewController::initWindow() {
         eventType, event);
   };
 
+  auto touchCallback = [](int eventType, EmscriptenTouchEvent const *event,
+                          void *userData) -> EM_BOOL {
+    return static_cast<StaircaseViewController *>(userData)->onTouchEvent(
+        eventType, event);
+  };
+
+
   auto resizeCallback = [](int eventType, EmscriptenUiEvent const *event,
                            void *userData) -> EM_BOOL {
     return static_cast<StaircaseViewController *>(userData)->onResizeEvent(
@@ -49,14 +56,14 @@ void StaircaseViewController::initWindow() {
   };
 
   // clang-format off
-  emscripten_set_resize_callback     (windowTarget, this, true, resizeCallback);
-  emscripten_set_mousedown_callback  (canvasTarget, this, true, mouseCallback);
-  emscripten_set_mouseup_callback    (windowTarget, this, true, mouseCallback);
-  emscripten_set_mousemove_callback  (windowTarget, this, true, mouseCallback);
-  emscripten_set_dblclick_callback   (canvasTarget, this, true, mouseCallback);
-  emscripten_set_click_callback      (canvasTarget, this, true, mouseCallback);
-  emscripten_set_mouseenter_callback (canvasTarget, this, true, mouseCallback);
-  emscripten_set_wheel_callback      (canvasTarget, this, true, wheelCallback);
+  emscripten_set_resize_callback     (windowTarget, this, useCapture, resizeCallback);
+  emscripten_set_mousedown_callback  (canvasTarget, this, useCapture, mouseCallback);
+  emscripten_set_mouseup_callback    (windowTarget, this, useCapture, mouseCallback);
+  emscripten_set_mousemove_callback  (windowTarget, this, useCapture, mouseCallback);
+  emscripten_set_dblclick_callback   (canvasTarget, this, useCapture, mouseCallback);
+  emscripten_set_click_callback      (canvasTarget, this, useCapture, mouseCallback);
+  emscripten_set_mouseenter_callback (canvasTarget, this, useCapture, mouseCallback);
+  emscripten_set_wheel_callback      (canvasTarget, this, useCapture, wheelCallback);
   // clang-format on
 }
 
@@ -263,9 +270,19 @@ StaircaseViewController::onWheelEvent(int eventType,
 }
 
 EM_BOOL
+StaircaseViewController::onTouchEvent(int eventType,
+                                      EmscriptenTouchEvent const *event) {
+  if (view.IsNull()) { return EM_FALSE; }
+
+  Handle(Wasm_Window) aWindow = Handle(Wasm_Window)::DownCast(view->Window());
+  return aWindow->ProcessTouchEvent(*this, eventType, event) ? EM_TRUE
+                                                             : EM_FALSE;
+}
+
+EM_BOOL
 StaircaseViewController::onResizeEvent(int eventType,
                                        EmscriptenUiEvent const *event) {
-  std::cout << "onResizeEvent" << std::endl;
+
   (void)eventType;
   (void)event;
   if (view.IsNull()) { return EM_FALSE; }

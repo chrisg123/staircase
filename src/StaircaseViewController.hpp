@@ -21,12 +21,14 @@ public:
   void initScene();
   void redrawView();
   void updateView();
-  void fitAllObjects (bool withAuto);
+  void fitAllObjects(bool withAuto);
   void initStepFile(Handle(TDocStd_Document) aDoc);
   char const *getCanvasTag();
   EM_BOOL onMouseEvent(int eventType, EmscriptenMouseEvent const *event);
-  EM_BOOL onWheelEvent(int theEventType, EmscriptenWheelEvent const *theEvent);
-  EM_BOOL onResizeEvent(int theEventType, EmscriptenUiEvent const *theEvent);
+  EM_BOOL onWheelEvent(int eventType, EmscriptenWheelEvent const *event);
+  EM_BOOL onResizeEvent(int eventType, EmscriptenUiEvent const *event);
+  EM_BOOL onTouchEvent(int eventType, EmscriptenTouchEvent const *event);
+
   static void onRedrawView(void *view);
   virtual void ProcessInput() override;
 
