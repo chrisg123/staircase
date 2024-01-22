@@ -88,9 +88,9 @@ void StaircaseViewController::initWindow() {
   emscripten_set_touchmove_callback  (canvasTarget, this, useCapture, touchCallback);
   emscripten_set_touchcancel_callback(canvasTarget, this, useCapture, touchCallback);
 
+  // The events below don't seem to trigger for canvasTarget
   emscripten_set_keydown_callback    (canvasTarget, this, useCapture, keyDownCallback);
   emscripten_set_keyup_callback      (canvasTarget, this, useCapture, keyUpCallback);
-
   emscripten_set_focusout_callback   (canvasTarget, this, useCapture, focusCallback);
 
   // clang-format on
