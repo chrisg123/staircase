@@ -1,12 +1,16 @@
 #!/bin/bash
 
 set -e
-
+ver=0.1.0
 verbose=0
+dist=1
 
 for arg in "$@"; do
     if [ "${arg}" == "--verbose" ] || [ "${arg}" == "-v" ]; then
         verbose=1
+    fi
+    if [ "${arg}" == "--dist" ] || [ "${arg}" == "-d" ]; then
+        dist=1
     fi
 done
 
@@ -145,7 +149,7 @@ else
     } >>"${resource_header}"
 fi
 
-echo "#endif // EMBEDDED_STEP_FILE_H" >> "${resource_header}"
+echo "#endif // EMBEDDED_STEP_FILE_H" >>"${resource_header}"
 
 pushd build/staircase
 cmake ../.. -DCMAKE_TOOLCHAIN_FILE="${toolchain_file}"
@@ -168,6 +172,30 @@ if [ ! -d "${script_dir}/src" ]; then
 fi
 
 html_file="${script_dir}/web/index.html"
-set -x
+
 cp "${html_file}" "${build_dir}/staircase/index.html"
-# -*- mode: org -*-
+
+if [ "$dist" -eq 1 ]; then
+    echo "Creating distribution package..."
+    dist_dir="${build_dir}/dist"
+    rm -rf "$dist_dir"
+    mkdir -p "${dist_dir}"
+
+    # Create a temporary directory for packaging
+    stage_dir="${build_dir}/temp_package"
+    rm -rf "$stage_dir"
+    mkdir -p "${stage_dir}/staircase"
+
+    cp "${build_dir}/staircase/staircase.js" "${stage_dir}/staircase/"
+    cp "${build_dir}/staircase/staircase.wasm" "${stage_dir}/staircase/"
+    cp "${build_dir}/staircase/staircase.worker.js" "${stage_dir}/staircase/"
+
+    tar -cvf "${dist_dir}/staircase-${ver}.tar" -C "${stage_dir}" "staircase"
+    pushd "${stage_dir}"
+    zip -r "${dist_dir}/staircase-${ver}.zip" "staircase"
+    popd
+
+    rm -rf "$stage_dir"
+
+    echo "Distribution package created in ${dist_dir}"
+fi

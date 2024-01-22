@@ -4,6 +4,9 @@ all:
 clean:
 	rm -rf build/staircase
 
+clean-dist:
+	rm -rf build/dist
+
 clean-all:
 	rm -rf build
 	rm -f .skip_initial_dependency_build
@@ -20,4 +23,8 @@ reset: clean-all
 demo:
 	./run_demo.sh
 
-.PHONY: clean cleanall demo all
+
+dist:
+	./build.sh --dist
+
+.PHONY: clean cleanall demo all dist
