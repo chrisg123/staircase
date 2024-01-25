@@ -99,6 +99,10 @@ EMSCRIPTEN_KEEPALIVE void StaircaseViewer::initEmptyScene() {
              MessageType::NextFrame));
 }
 
+EMSCRIPTEN_KEEPALIVE std::string StaircaseViewer::getContainerId() {
+  return this->context->containerId;
+}
+
 EMSCRIPTEN_KEEPALIVE int
 StaircaseViewer::loadStepFile(std::string const &stepFileContent) {
   if (stepFileContent.empty()) {
@@ -315,5 +319,6 @@ EMSCRIPTEN_BINDINGS(staircase) {
       .function("getOCCTVersion", &StaircaseViewer::getOCCTVersion)
       .function("fitAllObjects", &StaircaseViewer::fitAllObjects)
       .function("removeAllObjects", &StaircaseViewer::removeAllObjects)
-      .function("loadStepFile", &StaircaseViewer::loadStepFile);
+      .function("loadStepFile", &StaircaseViewer::loadStepFile)
+      .function("getContainerId", &StaircaseViewer::getContainerId);
 }

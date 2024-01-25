@@ -18,6 +18,7 @@ public:
   ~StaircaseViewer();
 
   std::shared_ptr<AppContext> context;
+  std::string getContainerId();
 
   int loadStepFile(std::string const &stepFileContent);
   static void handleMessages(void *arg);
