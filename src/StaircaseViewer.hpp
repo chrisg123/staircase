@@ -10,7 +10,7 @@ class StaircaseViewer {
 public:
   StaircaseViewer(std::string const &containerId);
 
-  void createCanvas(std::string containerId, std::string canvasId);
+  int createCanvas(std::string containerId, std::string canvasId);
   void displaySplashScreen();
   std::string getDemoStepFile();
   std::string getOCCTVersion();

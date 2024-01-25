@@ -6,9 +6,30 @@
 #include <memory>
 #include <opencascade/Standard_Version.hxx>
 #include <optional>
+
 #ifndef DIST_BUILD
 #include "EmbeddedStepFile.hpp"
 #endif
+
+EM_JS(const char*, generate_uuid_js, (), {
+  var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0;
+    var v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+
+  var length = lengthBytesUTF8(uuid) + 1;
+  var stringOnWasmHeap = _malloc(length);
+  stringToUTF8(uuid, stringOnWasmHeap, length);
+  return stringOnWasmHeap;
+});
+
+std::string generate_uuid() {
+    char const * uuid_c_str = generate_uuid_js();
+    std::string uuid(uuid_c_str);
+    std::free(const_cast<char *>(uuid_c_str));
+    return uuid;
+}
 
 EMSCRIPTEN_KEEPALIVE
 StaircaseViewer::StaircaseViewer(std::string const &containerId) {
@@ -16,12 +37,16 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
   emscripten_set_main_loop(dummyMainLoop, -1, 0);
 
   context = std::make_shared<AppContext>();
-  context->canvasId = "staircase-canvas";
+  context->canvasId = "staircase-canvas-" + generate_uuid();
 
   context->viewController =
       std::make_unique<StaircaseViewController>(context->canvasId);
 
-  createCanvas(containerId, context->canvasId);
+  if (createCanvas(containerId, context->canvasId) != 0) {
+    std::cerr << "Failed to create canvas. Initialization aborted." << std::endl;
+    return;
+  }
+
   context->viewController->initWindow();
   setupWebGLContext(context->canvasId);
   context->viewController->initViewer();
@@ -108,32 +133,36 @@ std::string StaircaseViewer::getStepFileContent() {
 
 StaircaseViewer::~StaircaseViewer() {}
 
-void StaircaseViewer::createCanvas(std::string containerId,
+int StaircaseViewer::createCanvas(std::string containerId,
                                    std::string canvasId) {
-  EM_ASM(
+  return EM_ASM_INT(
       {
         if (typeof document == 'undefined') { return; }
 
         var divElement = document.getElementById(UTF8ToString($0));
 
-        if (divElement) {
-          var canvas = document.createElement('canvas');
-          canvas.id = UTF8ToString($1);
-          canvas.tabIndex = -1;
-          canvas.oncontextmenu = function(event) { event.preventDefault(); };
-          divElement.appendChild(canvas);
-
-          // Align canvas size with device pixels
-          var computedStyle = window.getComputedStyle(canvas);
-          var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10);
-          var cssHeight =
-              parseInt(computedStyle.getPropertyValue('height'), 10);
-          var devicePixelRatio = window.devicePixelRatio || 1;
-          canvas.width = cssWidth * devicePixelRatio;
-          canvas.height = cssHeight * devicePixelRatio;
+        if (!divElement) {
+          console.error("Div element with id '" + UTF8ToString($0) + "' not found.");
+          Module.canvas = null;
+          return 1;
         }
-        // Set the canvas to emscripten Module object
+        var canvas = document.createElement('canvas');
+        canvas.id = UTF8ToString($1);
+        canvas.className = "staircase-canvas";
+        canvas.tabIndex = -1;
+        canvas.oncontextmenu = function(event) { event.preventDefault(); };
+        divElement.appendChild(canvas);
+
+        // Align canvas size with device pixels
+        var computedStyle = window.getComputedStyle(canvas);
+        var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10);
+        var cssHeight =
+            parseInt(computedStyle.getPropertyValue('height'), 10);
+        var devicePixelRatio = window.devicePixelRatio || 1;
+        canvas.width = cssWidth * devicePixelRatio;
+        canvas.height = cssHeight * devicePixelRatio;
         Module.canvas = canvas;
+        return 0;
       },
       containerId.c_str(), canvasId.c_str());
 }
