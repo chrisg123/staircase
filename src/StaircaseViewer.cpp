@@ -11,6 +11,7 @@
 #include "EmbeddedStepFile.hpp"
 #endif
 
+// clang-format off
 EM_JS(const char*, generate_uuid_js, (), {
   var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0;
@@ -23,6 +24,7 @@ EM_JS(const char*, generate_uuid_js, (), {
   stringToUTF8(uuid, stringOnWasmHeap, length);
   return stringOnWasmHeap;
 });
+// clang-format on
 
 std::string generate_uuid() {
     char const * uuid_c_str = generate_uuid_js();
