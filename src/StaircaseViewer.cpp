@@ -26,11 +26,11 @@ EM_JS(const char*, generate_uuid_js, (), {
 });
 // clang-format on
 
-std::string generate_uuid() {
-    char const * uuid_c_str = generate_uuid_js();
-    std::string uuid(uuid_c_str);
-    std::free(const_cast<char *>(uuid_c_str));
-    return uuid;
+EMSCRIPTEN_KEEPALIVE std::string generate_uuid() {
+  char const *uuid_c_str = generate_uuid_js();
+  std::string uuid(uuid_c_str);
+  std::free(const_cast<char *>(uuid_c_str));
+  return uuid;
 }
 
 EMSCRIPTEN_KEEPALIVE
