@@ -56,6 +56,7 @@ public:
   bool stepFileLoaded = false;
   bool shouldRotate = true;
   SpinnerParams spinnerParams;
+  std::string containerId;
   std::string canvasId;
 
   Handle(V3d_View) getView() const {
