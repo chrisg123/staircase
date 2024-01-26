@@ -11,6 +11,13 @@
 #include "EmbeddedStepFile.hpp"
 #endif
 
+std::mutex StaircaseViewer::startWorkerMutex;
+std::atomic<bool> StaircaseViewer::backgroundWorkerRunning = false;
+pthread_t StaircaseViewer::backgroundWorkerThread;
+std::queue<Staircase::Message> StaircaseViewer::backgroundQueue;
+std::mutex StaircaseViewer::backgroundQueueMutex;
+std::condition_variable StaircaseViewer::cv;
+
 // clang-format off
 EM_JS(const char*, generate_uuid_js, (), {
   var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -70,8 +77,7 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
   emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
                                               context.get());
 
-  pthread_create(&backgroundWorkerThread, NULL,
-                 StaircaseViewer::backgroundWorker, this);
+  StaircaseViewer::ensureBackgroundWorker();
 }
 
 EMSCRIPTEN_KEEPALIVE void StaircaseViewer::displaySplashScreen() {
@@ -118,13 +124,11 @@ StaircaseViewer::loadStepFile(std::string const &stepFileContent) {
     return 1;
   }
   setStepFileContent(stepFileContent);
-  context->pushBackground(MessageType::LoadStepFile);
 
-  if (backgroundWorkerRunning) {
-    backgroundWorkerRunning = true;
-    pthread_create(&backgroundWorkerThread, NULL,
-                   StaircaseViewer::backgroundWorker, this);
-  }
+  Staircase::Message message(MessageType::LoadStepFile, this);
+  StaircaseViewer::pushBackground(message);
+  StaircaseViewer::ensureBackgroundWorker();
+
   return 0;
 }
 void StaircaseViewer::setStepFileContent(std::string const &content) {
@@ -218,14 +222,35 @@ void StaircaseViewer::removeAllObjects() {
 
 std::atomic<bool> isHandlingMessages{false};
 
-void *StaircaseViewer::backgroundWorker(void *arg) {
-  auto viewer = static_cast<StaircaseViewer *>(arg);
-
+void *StaircaseViewer::backgroundWorker(void *) {
   while (true) {
-    Staircase::Message msg = viewer->context->popBackground();
-    StaircaseViewer::_loadStepFile((void *)viewer);
+    Staircase::Message msg = StaircaseViewer::popBackground();
+    StaircaseViewer::_loadStepFile(msg.data);
   }
   return nullptr;
+}
+
+void StaircaseViewer::ensureBackgroundWorker() {
+  std::lock_guard<std::mutex> guard(StaircaseViewer::startWorkerMutex);
+  if (!StaircaseViewer::backgroundWorkerRunning) {
+    backgroundWorkerRunning = true;
+    pthread_create(&backgroundWorkerThread, NULL,
+                   StaircaseViewer::backgroundWorker, NULL);
+  }
+}
+
+void StaircaseViewer::pushBackground(const Staircase::Message& msg) {
+  std::unique_lock<std::mutex> lock(backgroundQueueMutex);
+  backgroundQueue.push(msg);
+  cv.notify_one();
+}
+
+Staircase::Message StaircaseViewer::popBackground() {
+  std::unique_lock<std::mutex> lock(backgroundQueueMutex);
+  cv.wait(lock, []{ return !backgroundQueue.empty(); });
+  Staircase::Message msg = backgroundQueue.front();
+  backgroundQueue.pop();
+  return msg;
 }
 
 void StaircaseViewer::handleMessages(void *arg) {

@@ -35,10 +35,10 @@ static char const *toString(Type type) {
 namespace Staircase {
 struct Message {
   MessageType::Type type;
-  std::shared_ptr<void> data;
+  void *data;
   std::shared_ptr<Message> nextMessage;
 
-  Message(MessageType::Type type, std::shared_ptr<void> data = nullptr)
+  Message(MessageType::Type type, void *data = nullptr)
       : type(type), data(data), nextMessage(nullptr) {}
 };
 } // namespace Staircase

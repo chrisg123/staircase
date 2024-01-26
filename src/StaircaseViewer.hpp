@@ -6,9 +6,22 @@
 #include <optional>
 #include <string>
 #include <mutex>
+
 class StaircaseViewer {
+  static std::mutex startWorkerMutex;
+  static std::atomic<bool> backgroundWorkerRunning;
+  static pthread_t backgroundWorkerThread;
+
+  static std::queue<Staircase::Message> backgroundQueue;
+  static std::mutex backgroundQueueMutex;
+  static std::condition_variable cv;
 public:
+
   StaircaseViewer(std::string const &containerId);
+
+  static void ensureBackgroundWorker();
+  static void pushBackground(const Staircase::Message& msg);
+  static Staircase::Message popBackground();
 
   int createCanvas(std::string containerId, std::string canvasId);
   void displaySplashScreen();
@@ -28,10 +41,8 @@ public:
   std::string getStepFileContent();
   void fitAllObjects ();
   void removeAllObjects();
-private:
-  pthread_t backgroundWorkerThread;
-  bool backgroundWorkerRunning = false;
 
+private:
   std::string _stepFileContent;
   std::mutex stepFileContentMutex;
 
