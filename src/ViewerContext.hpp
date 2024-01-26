@@ -1,5 +1,5 @@
-#ifndef APPCONTEXT_HPP
-#define APPCONTEXT_HPP
+#ifndef VIEWERCONTEXT_HPP
+#define VIEWERCONTEXT_HPP
 #include "staircase.hpp"
 #include <AIS_InteractiveContext.hxx>
 #include <GLES2/gl2.h>
@@ -10,7 +10,7 @@
 #include <opencascade/XCAFApp_Application.hxx>
 #include <queue>
 
-class AppContext {
+class ViewerContext {
 public:
 
 
@@ -103,4 +103,4 @@ private:
   std::condition_variable cv;
 };
 
-#endif // APPCONTEXT_HPP
+#endif // VIEWERCONTEXT_HPP

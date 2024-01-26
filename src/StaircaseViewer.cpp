@@ -38,7 +38,7 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
 
   emscripten_set_main_loop(dummyMainLoop, -1, 0);
 
-  context = std::make_shared<AppContext>();
+  context = std::make_shared<ViewerContext>();
   context->canvasId = "staircase-canvas-" + generate_uuid();
 
   context->viewController =
@@ -233,7 +233,7 @@ void StaircaseViewer::handleMessages(void *arg) {
     return;
   }
 
-  auto context = static_cast<AppContext *>(arg);
+  auto context = static_cast<ViewerContext *>(arg);
   auto localQueue = context->drainMessageQueue();
   bool nextFrame = false;
   int const FPS60 = 1000 / 60;

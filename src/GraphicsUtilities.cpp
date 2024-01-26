@@ -188,7 +188,7 @@ void setupWebGLContext(std::string const &canvasId) {
   emscripten_webgl_make_context_current(ctx);
 }
 
-void setupViewport(AppContext &context) {
+void setupViewport(ViewerContext &context) {
   GLint viewport[4];
   glGetIntegerv(GL_VIEWPORT, viewport);
   context.canvasWidth = viewport[2];

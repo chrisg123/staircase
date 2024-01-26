@@ -1,6 +1,6 @@
 #ifndef STAIRCASEVIEWER_HPP
 #define STAIRCASEVIEWER_HPP
-#include "AppContext.hpp"
+#include "ViewerContext.hpp"
 #include "GraphicsUtilities.hpp"
 #include <memory>
 #include <optional>
@@ -17,7 +17,7 @@ public:
   void initEmptyScene();
   ~StaircaseViewer();
 
-  std::shared_ptr<AppContext> context;
+  std::shared_ptr<ViewerContext> context;
   std::string getContainerId();
 
   int loadStepFile(std::string const &stepFileContent);

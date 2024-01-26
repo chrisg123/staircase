@@ -1,5 +1,5 @@
 #include "StaircaseViewController.hpp"
-#include "AppContext.hpp"
+#include "ViewerContext.hpp"
 #include "OCCTUtilities.hpp"
 #include "staircase.hpp"
 #include <AIS_ViewCube.hxx>

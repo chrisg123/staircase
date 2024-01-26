@@ -1,6 +1,6 @@
 #ifndef OCCTUTILITIES_HPP
 #define OCCTUTILITIES_HPP
-#include "AppContext.hpp"
+#include "ViewerContext.hpp"
 #include "staircase.hpp"
 
 std::optional<Handle(TDocStd_Document)>

@@ -2,7 +2,7 @@
 #define GRAPHICSUTILITIES_HPP
 
 #include "staircase.hpp"
-#include "AppContext.hpp"
+#include "ViewerContext.hpp"
 #include <GLES2/gl2.h>
 
 void clearCanvas(RGB color);
@@ -23,7 +23,7 @@ void drawLoadingScreen(GLuint shaderProgram, SpinnerParams &spinnerParams);
 
 void setupWebGLContext(std::string const &canvasId);
 
-void setupViewport(AppContext &context);
+void setupViewport(ViewerContext &context);
 void compileShader(GLuint &shader, char const *source, GLenum type);
 
 GLuint linkProgram(GLuint vertexShader, GLuint fragmentShader);
