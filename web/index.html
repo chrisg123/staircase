@@ -49,32 +49,32 @@
         </script>
 
         <script>
+            window.Staircase =
+                typeof window.Staircase !== "undefined" ? window.Staircase : {};
+
             let stepViewer = null;
 
-            var Staircase = {
-                containerId: "staircase-container",
-                onViewerReady: (viewer) => {
-                    stepViewer = viewer;
+            Staircase.containerId = "staircase-container";
+            Staircase.onViewerReady = (viewer) => {
+                stepViewer = viewer;
 
-                    let occtVer = viewer.getOCCTVersion();
-                    document.getElementById("version").innerHTML =
-                        "OCCT Version: " + occtVer;
+                let occtVer = viewer.getOCCTVersion();
+                document.getElementById("version").innerHTML =
+                    "OCCT Version: " + occtVer;
 
-                    viewer.displaySplashScreen();
+                viewer.displaySplashScreen();
 
+                setTimeout(function () {
+                    viewer.initEmptyScene();
+                }, 500);
+
+                let demoStepFile = viewer.getDemoStepFile();
+                if (demoStepFile != "") {
                     setTimeout(function () {
-                        viewer.initEmptyScene();
-                    }, 500);
-
-                    let demoStepFile = viewer.getDemoStepFile();
-                    if (demoStepFile != "") {
-                        setTimeout(function () {
-                            document.getElementById("stepText").innerHTML =
-                                demoStepFile;
-                            viewer.loadStepFile(demoStepFile);
-                        }, 3000);
-                    }
-
+                        document.getElementById("stepText").innerHTML =
+                            demoStepFile;
+                        viewer.loadStepFile(demoStepFile);
+                    }, 3000);
                 }
             };
 
@@ -102,33 +102,32 @@
                         alert("Please select a STEP file first.");
                     }
                     if (stepViewer === null) {
-                        console.log("stepViewer is null.")
+                        console.log("stepViewer is null.");
                         return;
                     }
 
-                    if (
-                        stepViewer.loadStepFile(stepFileContent) == 0
-                    ) {
+                    if (stepViewer.loadStepFile(stepFileContent) == 0) {
                         document.getElementById("stepText").innerHTML =
                             stepFileContent;
                     }
                 });
                 fitAllButton.addEventListener("click", function () {
                     if (stepViewer === null) {
-                        console.log("stepViewer is null.")
+                        console.log("stepViewer is null.");
                         return;
                     }
                     stepViewer.fitAllObjects();
                 });
                 removeAllButton.addEventListener("click", function () {
                     if (stepViewer === null) {
-                        console.log("stepViewer is null.")
+                        console.log("stepViewer is null.");
                         return;
                     }
                     stepViewer.removeAllObjects();
                 });
             });
         </script>
+
         <script async type="text/javascript" src="staircase.js"></script>
     </body>
 </html>
