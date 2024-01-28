@@ -161,16 +161,22 @@ int StaircaseViewer::createCanvas(std::string containerId,
         canvas.className = "staircase-canvas";
         canvas.tabIndex = -1;
         canvas.oncontextmenu = function(event) { event.preventDefault(); };
-        divElement.appendChild(canvas);
 
         // Align canvas size with device pixels
-        var computedStyle = window.getComputedStyle(canvas);
+        var computedStyle = window.getComputedStyle(divElement);
         var cssWidth = parseInt(computedStyle.getPropertyValue('width'), 10);
         var cssHeight =
             parseInt(computedStyle.getPropertyValue('height'), 10);
         var devicePixelRatio = window.devicePixelRatio || 1;
+
         canvas.width = cssWidth * devicePixelRatio;
         canvas.height = cssHeight * devicePixelRatio;
+
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+
+        divElement.appendChild(canvas);
+
         Module.canvas = canvas;
         return 0;
       },

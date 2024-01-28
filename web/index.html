@@ -7,11 +7,15 @@
             h1 {
                 font-size: 1.2em;
             }
-            .staircase-canvas {
+            #boundary-container {
                 width: 800px;
                 height: 600px;
                 border: 1px solid #000;
                 box-sizing: border-box;
+            }
+            #staircase-container {
+                width: 100%;
+                height: 100%;
             }
             #stepText {
                 width: 800px;
@@ -25,7 +29,9 @@
             <span id="version"></span>
         </div>
         <h1>Step File Viewer</h1>
-        <div id="staircase-container"></div>
+        <div id="boundary-container">
+            <div id="staircase-container"></div>
+        </div>
         <div>
             <input
                 type="file"
