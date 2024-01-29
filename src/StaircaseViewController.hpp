@@ -53,7 +53,7 @@ public:
 
   void setCanLoadNewFile(bool value);
   bool canLoadNewFile();
-
+  double cubeSize;
 private:
   std::string canvasId;
   std::string prefixedCanvasId;
@@ -71,6 +71,8 @@ private:
   bool _canLoadNewFile;
 
   NCollection_DataMap<unsigned int, Aspect_VKey> navKeyMap;
+
+  double determineCubeSize(double width, double height);
 
   bool navigationKeyModifierSwitch(unsigned int modifOld, unsigned int modifNew,
                                    double timeStamp);

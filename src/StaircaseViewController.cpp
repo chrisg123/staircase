@@ -123,6 +123,7 @@ bool StaircaseViewController::initViewer() {
 
   Handle(Wasm_Window) aWindow = new Wasm_Window(canvasTarget);
   aWindow->Size(windowSize.x(), windowSize.y());
+  this->cubeSize = determineCubeSize(windowSize.x(), windowSize.y());
 
   textAspect = new Prs3d_TextAspect();
   textAspect->SetFont(Font_NOF_ASCII_MONO);
@@ -152,6 +153,13 @@ bool StaircaseViewController::initViewer() {
   return true;
 }
 
+double StaircaseViewController::determineCubeSize(double width, double height) {
+    double scalingFactor = 0.07;
+    double currentSmallerDimension = std::min(width, height);
+    double cubeSize = currentSmallerDimension * scalingFactor;
+    return cubeSize;
+}
+
 void StaircaseViewController::initPixelScaleRatio() {
   if (!view.IsNull()) {
     view->ChangeRenderingParams().Resolution =
@@ -160,10 +168,10 @@ void StaircaseViewController::initPixelScaleRatio() {
   if (!aisContext.IsNull()) {
     aisContext->SetPixelTolerance((int(devicePixelRatio) * 6.0));
     if (!viewCube.IsNull()) {
-      static double const THE_CUBE_SIZE = 60.0;
+      static double const THE_CUBE_SIZE = this->cubeSize;
       viewCube->SetSize(devicePixelRatio * THE_CUBE_SIZE, false);
       viewCube->SetBoxFacetExtension(viewCube->Size() * 0.15);
-      viewCube->SetAxesPadding(viewCube->Size());
+      viewCube->SetAxesPadding(viewCube->Size() * 0.2);
       viewCube->SetFontHeight(THE_CUBE_SIZE * 0.16);
       if (viewCube->HasInteractiveContext()) {
         aisContext->Redisplay(viewCube, false);
@@ -177,7 +185,7 @@ void StaircaseViewController::initScene() {
   initPixelScaleRatio();
   viewCube->SetTransformPersistence(new Graphic3d_TransformPers(
       Graphic3d_TMF_TriedronPers, Aspect_TOTP_RIGHT_LOWER,
-      Graphic3d_Vec2i(100, 100)));
+      Graphic3d_Vec2i(this->cubeSize * 1.2, this->cubeSize * 1.2)));
 
   viewCube->Attributes()->SetDatumAspect(new Prs3d_DatumAspect());
   viewCube->Attributes()->DatumAspect()->SetTextAspect(textAspect);
@@ -407,6 +415,8 @@ StaircaseViewController::onResizeEvent(int eventType,
   Graphic3d_Vec2i newSize;
   aWindow->DoResize();
   aWindow->Size(newSize.x(), newSize.y());
+  this->cubeSize = determineCubeSize(newSize.x(), newSize.y());
+
   float const newRatio = emscripten_get_device_pixel_ratio();
   bool shouldRedraw = false;
   if (newSize != windowSize) {
