@@ -15,6 +15,9 @@ class StaircaseViewer {
   static std::queue<Staircase::Message> backgroundQueue;
   static std::mutex backgroundQueueMutex;
   static std::condition_variable cv;
+
+  static bool mainLoopSet;
+
 public:
 
   StaircaseViewer(std::string const &containerId);
