@@ -160,6 +160,12 @@ int StaircaseViewer::createCanvas(std::string containerId,
           Module.canvas = null;
           return 1;
         }
+
+        if (divElement.querySelector('canvas')) {
+          console.error("Canvas already exists in the div element.");
+          return 2;
+        }
+
         var canvas = document.createElement('canvas');
         canvas.id = UTF8ToString($1);
         canvas.className = "staircase-canvas";
