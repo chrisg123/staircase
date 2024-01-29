@@ -17,6 +17,7 @@ pthread_t StaircaseViewer::backgroundWorkerThread;
 std::queue<Staircase::Message> StaircaseViewer::backgroundQueue;
 std::mutex StaircaseViewer::backgroundQueueMutex;
 std::condition_variable StaircaseViewer::cv;
+bool StaircaseViewer::mainLoopSet = false;
 
 // clang-format off
 EM_JS(const char*, generate_uuid_js, (), {
@@ -43,7 +44,10 @@ EMSCRIPTEN_KEEPALIVE std::string generate_uuid() {
 EMSCRIPTEN_KEEPALIVE
 StaircaseViewer::StaircaseViewer(std::string const &containerId) {
 
-  emscripten_set_main_loop(dummyMainLoop, -1, 0);
+  if (!mainLoopSet) {
+    mainLoopSet = true;
+    emscripten_set_main_loop(dummyMainLoop, -1, 0);
+  }
 
   context = std::make_shared<ViewerContext>();
   context->canvasId = "staircase-canvas-" + generate_uuid();
