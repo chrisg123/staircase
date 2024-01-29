@@ -1,7 +1,4 @@
 if (typeof document !== "undefined") { // To avoid this code block in worker threads
-    window.Staircase =
-        typeof window.Staircase !== "undefined" ? window.Staircase : {};
-    window.Staircase._onViewerReady = null;
 
     const moduleArg = {
         locateFile: (file, scriptDirectory) => {
@@ -19,58 +16,56 @@ if (typeof document !== "undefined") { // To avoid this code block in worker thr
     };
 
     createStaircaseModule(moduleArg).then(function (module) {
-        window.Staircase.initializeViewers = function () {
-            if (!window.Staircase.containerIds) {
-                window.Staircase.containerIds = [];
-            }
+        window.Staircase = window.Staircase || {};
+        window.Staircase._queue = window.Staircase._queue || [];
+        window.Staircase._viewers = window.Staircase._viewers || {};
+        window.Staircase._containerIds = window.Staircase._containerIds || new Set();
 
-            if (window.Staircase.containerId) {
-                window.Staircase.containerIds.push(
-                    window.Staircase.containerId,
-                );
-            }
-
-            if (Staircase.containerIds.length === 0) {
-                console.warn(
-                    "Staircase.initializeViewers function called but no" +
-                        " container ids defined on Staircase object.",
-                );
-                return;
-            }
-
-            if (typeof window.Staircase.viewers === "undefined") {
-                window.Staircase.viewers = {};
-            }
-
-            if (typeof Staircase.onViewerReady !== "function") {
-                console.warn(
-                    "Staircase.onViewerReady function is not defined." +
-                        " You probably want to define this to capture" +
-                        " a reference to a viewer to load STEP files",
-                );
-            }
-
-            for (let containerId of window.Staircase.containerIds) {
+        let ensureViewerCreated = function(containerId) {
+            if (!window.Staircase._viewers[containerId]) {
                 let viewer = new module.StaircaseViewer(containerId);
-                window.Staircase.viewers[containerId] = viewer;
-                if (typeof window.Staircase.onViewerReady === "function") {
-                    window.Staircase.onViewerReady(viewer);
-                }
+                window.Staircase._viewers[containerId] = viewer;
+                return viewer;
             }
+            return window.Staircase._viewers[containerId];
         };
 
-        if (typeof window.Staircase.onViewerReady !== "undefined") {
-            window.Staircase.initializeViewers();
-        } else {
-            Object.defineProperty(window.Staircase, "onViewerReady", {
-                set: function (callback) {
-                    this._onViewerReady = callback;
-                    window.Staircase.initializeViewers();
-                },
-                get: function () {
-                    return this._onViewerReady;
-                },
-            });
+        let enqueueAll = function(items) {
+            for (let item of items) {
+                window.Staircase._queue.push(item)
+            }
         }
+
+        let flushQueue = function() {
+            while (window.Staircase._queue.length > 0) {
+                let item = window.Staircase._queue.shift();
+                if (!item.containerId) {
+                    console.warn("Skipping invalid queue item. Missing property 'containerId'");
+                    continue;
+                }
+                window.Staircase._containerIds.add(item.containerId);
+                let viewer = ensureViewerCreated(item.containerId);
+                if (item.callback) {
+                    item.callback(viewer);
+                }
+            }
+        }
+
+        if (window.Staircase.queue) {
+            enqueueAll(window.Staircase.queue);
+        }
+
+        Object.defineProperty(window.Staircase, "queue", {
+            set: function (newValue) {
+                enqueueAll(newValue);
+                flushQueue();
+            },
+            get: function () {
+                console.warn("Queue is write-only.")
+            }
+        });
+
+        flushQueue();
+
     });
 }

@@ -55,34 +55,35 @@
         </script>
 
         <script>
-            window.Staircase =
-                typeof window.Staircase !== "undefined" ? window.Staircase : {};
+            window.Staircase = window.Staircase || {};
 
             let stepViewer = null;
 
-            Staircase.containerId = "staircase-container";
-            Staircase.onViewerReady = (viewer) => {
-                stepViewer = viewer;
+            window.Staircase.queue = [{
+                "containerId": "staircase-container",
+                "callback": (viewer) => {
+                    stepViewer = viewer;
 
-                let occtVer = viewer.getOCCTVersion();
-                document.getElementById("version").innerHTML =
-                    "OCCT Version: " + occtVer;
+                    let occtVer = viewer.getOCCTVersion();
+                    document.getElementById("version").innerHTML =
+                        "OCCT Version: " + occtVer;
 
-                viewer.displaySplashScreen();
+                    viewer.displaySplashScreen();
 
-                setTimeout(function () {
-                    viewer.initEmptyScene();
-                }, 500);
-
-                let demoStepFile = viewer.getDemoStepFile();
-                if (demoStepFile != "") {
                     setTimeout(function () {
-                        document.getElementById("stepText").innerHTML =
-                            demoStepFile;
-                        viewer.loadStepFile(demoStepFile);
-                    }, 3000);
+                        viewer.initEmptyScene();
+                    }, 500);
+
+                    let demoStepFile = viewer.getDemoStepFile();
+                    if (demoStepFile != "") {
+                        setTimeout(function () {
+                            document.getElementById("stepText").innerHTML =
+                                demoStepFile;
+                            viewer.loadStepFile(demoStepFile);
+                        }, 3000);
+                    }
                 }
-            };
+            }];
 
             document.addEventListener("DOMContentLoaded", function () {
                 var stepFileInput = document.getElementById("stepFileInput");
