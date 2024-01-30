@@ -128,16 +128,22 @@ std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
 #define DEBUG_EXECUTE(CodeBlock)
 #endif
 
-inline void debugOut(const std::string &msg) {
-  #ifdef DEBUG_BUILD
+template <typename... Args> void debugOut(Args... args) {
+#ifdef DEBUG_BUILD
+  std::ostringstream stream;
+  (stream << ... << args); // fold expression
+  std::string msg = stream.str();
   auto now = std::chrono::system_clock::now();
   auto nowAsTimeT = std::chrono::system_clock::to_time_t(now);
-  auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+  auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                   now.time_since_epoch()) %
+               1000;
   std::stringstream timeStream;
   timeStream << std::put_time(std::localtime(&nowAsTimeT), "%Y-%m-%d %H:%M:%S");
   timeStream << '.' << std::setfill('0') << std::setw(3) << nowMs.count();
-  std::cout << "[" << timeStream.str() << "] " << "DEBUG: " << msg << std::endl;
-  #endif
+  std::cout << "[" << timeStream.str() << "] "
+            << "DEBUG: " << msg << std::endl;
+#endif
 }
 
 #endif // STAIRCASE_HPP
