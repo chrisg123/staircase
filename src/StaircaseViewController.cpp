@@ -218,6 +218,8 @@ void StaircaseViewController::removeAllObjects() {
   }
 }
 void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
+  debugOut("StaircaseViewController::initStepFile(Handle(TDocStd_Document))");
+
   if (aDoc.IsNull() || aisContext.IsNull()) {
     std::cerr << "No document or AIS context." << std::endl;
   }
@@ -225,8 +227,10 @@ void StaircaseViewController::initStepFile(Handle(TDocStd_Document) aDoc) {
   removeAllObjects();
 
   std::vector<TopoDS_Shape> shapes = getShapesFromDoc(aDoc);
+  debugOut("shapes.size(): ", shapes.size());
 
   for (auto const &shape : shapes) {
+
     Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
     aisContext->SetDisplayMode(aisShape, AIS_SHADED_MODE, Standard_True);
     aisContext->Display(aisShape, Standard_True);

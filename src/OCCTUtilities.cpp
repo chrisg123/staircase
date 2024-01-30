@@ -11,7 +11,7 @@
 #include <opencascade/TDocStd_Document.hxx>
 #include <opencascade/XCAFDoc_ColorTool.hxx>
 #include <opencascade/XCAFDoc_ShapeTool.hxx>
-
+#include <unordered_set>
 std::optional<Handle(TDocStd_Document)>
 readInto(std::function<Handle(TDocStd_Document)()> aNewDoc,
          std::istream &fromStream) {
@@ -93,21 +93,47 @@ std::optional<Quantity_Color> getShapeColor(Handle(TDocStd_Document) const aDoc,
   return std::nullopt;
 }
 
+std::string ShapeEnumToString(TopAbs_ShapeEnum shapeType) {
+    switch (shapeType) {
+        case TopAbs_COMPOUND:  return "TopAbs_COMPOUND";
+        case TopAbs_COMPSOLID: return "TopAbs_COMPSOLID";
+        case TopAbs_SOLID:     return "TopAbs_SOLID";
+        case TopAbs_SHELL:     return "TopAbs_SHELL";
+        case TopAbs_FACE:      return "TopAbs_FACE";
+        case TopAbs_WIRE:      return "TopAbs_WIRE";
+        case TopAbs_EDGE:      return "TopAbs_EDGE";
+        case TopAbs_VERTEX:    return "TopAbs_VERTEX";
+        default:               return "Unknown";
+    }
+}
+
 std::vector<TopoDS_Shape> getShapesFromDoc(Handle(TDocStd_Document)
                                                const aDoc) {
-  std::vector<TopoDS_Shape> shapes;
-  TDF_Label mainLabel = aDoc->Main();
-  Handle(XCAFDoc_ShapeTool) shapeTool =
-      XCAFDoc_DocumentTool::ShapeTool(mainLabel);
-  for (TDF_ChildIterator it(mainLabel, Standard_True); it.More(); it.Next()) {
-    TDF_Label label = it.Value();
-    if (!shapeTool->IsShape(label)) { continue; }
-    TopoDS_Shape shape;
-    if (!shapeTool->GetShape(label, shape) || shape.IsNull()) {
-      std::cerr << "Failed to get shape from label." << std::endl;
-      continue;
+    std::vector<TopoDS_Shape> shapes;
+    TDF_Label mainLabel = aDoc->Main();
+    Handle(XCAFDoc_ShapeTool) shapeTool =
+        XCAFDoc_DocumentTool::ShapeTool(mainLabel);
+
+    std::unordered_set<int> seenLabels;
+    for (TDF_ChildIterator it(mainLabel, Standard_True); it.More(); it.Next()) {
+      TDF_Label label = it.Value();
+
+      if (seenLabels.find(label.Tag()) != seenLabels.end()) {
+        continue;
+      }
+
+      if (!shapeTool->IsShape(label)) { continue; }
+      TopoDS_Shape shape;
+      if (!shapeTool->GetShape(label, shape) || shape.IsNull()) {
+        std::cerr << "Failed to get shape from label." << std::endl;
+        continue;
+      }
+
+      shapes.push_back(shape);
+      seenLabels.insert(label.Tag());
+
+      debugOut("[Shape] Label= ", label.Tag(), ", Type= ", shape.ShapeType(), "(",
+               ShapeEnumToString(shape.ShapeType()), ")");
     }
-    shapes.push_back(shape);
-  }
-  return shapes;
+    return shapes;
 }
