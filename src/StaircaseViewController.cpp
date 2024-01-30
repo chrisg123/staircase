@@ -295,14 +295,13 @@ EM_BOOL
 StaircaseViewController::onMouseEvent(int eventType,
                                       EmscriptenMouseEvent const *event) {
   if (view.IsNull()) { return EM_FALSE; }
-
   auto aWindow = Handle(Wasm_Window)::DownCast(view->Window());
   if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE ||
       eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
     jsUpdateBoundingClientRect();
     EmscriptenMouseEvent anEvent = *event;
     anEvent.targetX -= jsGetBoundingClientLeft();
-    anEvent.targetY -= jsGetBoundingClientLeft();
+    anEvent.targetY -= jsGetBoundingClientTop();
     aWindow->ProcessMouseEvent(*this, eventType, &anEvent);
     return EM_FALSE;
   }
