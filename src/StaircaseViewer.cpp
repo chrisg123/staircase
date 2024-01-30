@@ -157,17 +157,26 @@ int StaircaseViewer::createCanvas(std::string containerId,
       {
         if (typeof document == 'undefined') { return; }
 
-        var divElement = document.getElementById(UTF8ToString($0));
+        let containerId = UTF8ToString($0);
+
+        var divElement = document.getElementById(containerId);
 
         if (!divElement) {
-          console.error("Div element with id '" + UTF8ToString($0) + "' not found.");
+          console.error("Div element with id '" + containerId + "' not found.");
           Module.canvas = null;
           return 1;
         }
 
         if (divElement.querySelector('canvas')) {
           console.error("Canvas already exists in the div element.");
-          return 2;
+          return 1;
+        }
+
+        let rect = divElement.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+            console.warn("Container with id '" + containerId +
+                         "' has zero size. Viewer not created");
+            return 1;
         }
 
         var canvas = document.createElement('canvas');

@@ -43,11 +43,31 @@ if (typeof document !== "undefined") { // To avoid this code block in worker thr
                     console.warn("Skipping invalid queue item. Missing property 'containerId'");
                     continue;
                 }
-                window.Staircase._containerIds.add(item.containerId);
-                let viewer = ensureViewerCreated(item.containerId);
-                if (item.callback) {
-                    item.callback(viewer);
+                let containerId = item.containerId;
+
+                let divElement = document.getElementById(containerId);
+
+                if (!divElement) {
+                    console.error("Container with id '" + containerId +
+                                  "' not found.");
+                    continue;
                 }
+
+                let resizeObserver = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        let rect = entry.contentRect;
+                        if (rect.width > 0 && rect.height > 0) {
+                            resizeObserver.disconnect();
+                            window.Staircase._containerIds.add(item.containerId);
+                            let viewer = ensureViewerCreated(item.containerId);
+                            if (item.callback) {
+                                item.callback(viewer);
+                            }
+                        }
+                    }
+                });
+
+                resizeObserver.observe(divElement);
             }
         }
 
