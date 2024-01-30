@@ -43,14 +43,18 @@ EMSCRIPTEN_KEEPALIVE std::string generate_uuid() {
 
 EMSCRIPTEN_KEEPALIVE
 StaircaseViewer::StaircaseViewer(std::string const &containerId) {
+  debugOut("StaircaseViewer::StaircaseViewer(" + containerId + ")");
 
   if (!mainLoopSet) {
+    debugOut("!mainLoopSet; emscripten_set_main_loop;");
+
     mainLoopSet = true;
     emscripten_set_main_loop(dummyMainLoop, -1, 0);
   }
 
   context = std::make_shared<ViewerContext>();
   context->canvasId = "staircase-canvas-" + generate_uuid();
+  debugOut("context->canvasId: " + context->canvasId);
 
   context->viewController =
       std::make_unique<StaircaseViewController>(context->canvasId);

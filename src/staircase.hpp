@@ -4,6 +4,12 @@
 #include <any>
 #include <iostream>
 
+#ifdef DEBUG_BUILD
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#endif
+
 namespace MessageType {
 enum Type {
   SetVersionString,
@@ -114,6 +120,24 @@ std::shared_ptr<Staircase::Message> chain(MessageTypes... types) {
   };
   (createAndLink(types), ...);
   return head;
+}
+
+#ifdef DEBUG_BUILD
+#define DEBUG_EXECUTE(CodeBlock) CodeBlock
+#else
+#define DEBUG_EXECUTE(CodeBlock)
+#endif
+
+inline void debugOut(const std::string &msg) {
+  #ifdef DEBUG_BUILD
+  auto now = std::chrono::system_clock::now();
+  auto nowAsTimeT = std::chrono::system_clock::to_time_t(now);
+  auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+  std::stringstream timeStream;
+  timeStream << std::put_time(std::localtime(&nowAsTimeT), "%Y-%m-%d %H:%M:%S");
+  timeStream << '.' << std::setfill('0') << std::setw(3) << nowMs.count();
+  std::cout << "[" << timeStream.str() << "] " << "DEBUG: " << msg << std::endl;
+  #endif
 }
 
 #endif // STAIRCASE_HPP

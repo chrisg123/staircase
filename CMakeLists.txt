@@ -5,6 +5,7 @@ project(Staircase)
 set(CMAKE_CXX_STANDARD 17)
 
 option(DIST_BUILD "Build for distribution" OFF)
+option(DEBUG_BUILD "Build for distribution" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -s USE_PTHREADS=1 -Wno-pthreads-mem-growth")
 
@@ -81,6 +82,11 @@ else()
     " -sASSERTIONS"
   )
 endif()
+
+if(DEBUG_BUILD)
+  add_definitions(-DDEBUG_BUILD)
+endif()
+
 
 
 string(CONCAT FINAL_EMSCRIPTEN_FLAGS ${EMSCRIPTEN_FLAGS})

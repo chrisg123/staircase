@@ -4,6 +4,7 @@ set -e
 ver=0.1.0
 verbose=0
 dist=0
+debug=0
 
 for arg in "$@"; do
     if [ "${arg}" == "--verbose" ] || [ "${arg}" == "-v" ]; then
@@ -11,6 +12,9 @@ for arg in "$@"; do
     fi
     if [ "${arg}" == "--dist" ] || [ "${arg}" == "-d" ]; then
         dist=1
+    fi
+    if [ "${arg}" == "--debug" ] || [ "${arg}" == "-d" ]; then
+        debug=1
     fi
 done
 
@@ -27,6 +31,7 @@ export SKIP_EMSDK_MESSAGE=1
 }
 
 build_dir="${script_dir}/build"
+src_dir="${script_dir}/src"
 
 cmake_modules="upstream/emscripten/cmake/Modules"
 toolchain_file="${EMSDK}/${cmake_modules}/Platform/Emscripten.cmake"
@@ -154,11 +159,18 @@ echo "#endif // EMBEDDED_STEP_FILE_H" >>"${resource_header}"
 pushd build/staircase
 
 extra_cmake_flags=()
-if [ "$dist" -eq 1 ]; then
+if [ "$dist" -eq 1 ] && [ "$debug" -ne 1 ]; then
     extra_cmake_flags+=("-DDIST_BUILD=ON")
 else
     extra_cmake_flags+=("-DDIST_BUILD=OFF")
 fi
+
+if [ "$debug" -eq 1 ]; then
+    extra_cmake_flags+=("-DDEBUG_BUILD=ON")
+else
+    extra_cmake_flags+=("-DDEBUG_BUILD=OFF")
+fi
+
 
 if [ "$verbose" -eq 1 ]; then
     extra_cmake_flags+=("-DCMAKE_VERBOSE_MAKEFILE=ON")
@@ -201,6 +213,12 @@ if [ "$dist" -eq 1 ]; then
     cp "${build_dir}/staircase/staircase.js" "${stage_dir}/staircase/"
     cp "${build_dir}/staircase/staircase.wasm" "${stage_dir}/staircase/"
     cp "${build_dir}/staircase/staircase.worker.js" "${stage_dir}/staircase/"
+
+    if [ "$debug" -eq 1 ]; then
+        mkdir -p "${stage_dir}/staircase/src"
+        cp "${build_dir}/staircase/staircase.wasm.map" "${stage_dir}/staircase/"
+        cp -R "${src_dir}"/* "${stage_dir}/staircase/src/"
+    fi
 
     tar -czvf "${dist_dir}/staircase-${ver}.tar.gz" -C "${stage_dir}" "staircase"
     pushd "${stage_dir}"

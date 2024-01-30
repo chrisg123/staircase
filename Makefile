@@ -32,4 +32,7 @@ demo:
 dist:
 	./build.sh --dist
 
+dist-debug:
+	./build.sh --dist --debug
+
 .PHONY: clean cleanall demo all verbose dist

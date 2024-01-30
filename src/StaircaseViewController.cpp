@@ -25,6 +25,8 @@ EM_JS(int, jsGetBoundingClientLeft, (),
       { return Math.round(Module._myCanvasRect.left); });
 
 void StaircaseViewController::initWindow() {
+  debugOut("StaircaseViewController::initWindow()");
+
   devicePixelRatio = emscripten_get_device_pixel_ratio();
 
   auto canvasTarget = getCanvasTag();
@@ -97,6 +99,8 @@ void StaircaseViewController::initWindow() {
 }
 
 bool StaircaseViewController::initViewer() {
+  debugOut("StaircaseViewController::initViewer()");
+
   Handle(Aspect_DisplayConnection) aDisp;
   Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
   aDriver->ChangeOptions().buffersNoSwap = true;
@@ -122,8 +126,14 @@ bool StaircaseViewController::initViewer() {
   auto canvasTarget = getCanvasTag();
 
   Handle(Wasm_Window) aWindow = new Wasm_Window(canvasTarget);
+
   aWindow->Size(windowSize.x(), windowSize.y());
   this->cubeSize = determineCubeSize(windowSize.x(), windowSize.y());
+  DEBUG_EXECUTE({
+      std::stringstream windowSizeMsg;
+      windowSizeMsg << "Wasm_Window Size: " << windowSize.x() << "x" << windowSize.y();
+      debugOut(windowSizeMsg.str());
+  });
 
   textAspect = new Prs3d_TextAspect();
   textAspect->SetFont(Font_NOF_ASCII_MONO);
