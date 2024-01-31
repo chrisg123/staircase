@@ -168,7 +168,7 @@ void drawLoadingScreen(GLuint shaderProgram, SpinnerParams &spinnerParams) {
   }
 }
 
-void setupWebGLContext(std::string const &canvasId) {
+EMSCRIPTEN_WEBGL_CONTEXT_HANDLE setupWebGLContext(std::string const &canvasId) {
   EmscriptenWebGLContextAttributes attrs;
   emscripten_webgl_init_context_attributes(&attrs);
 
@@ -186,6 +186,12 @@ void setupWebGLContext(std::string const &canvasId) {
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx =
       emscripten_webgl_create_context(("#" + canvasId).c_str(), &attrs);
   emscripten_webgl_make_context_current(ctx);
+  return ctx;
+}
+
+void cleanupWebGLContext(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE const &ctx) {
+  debugOut("cleanupWebGLContext(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE const &ctx)");
+  emscripten_webgl_destroy_context(ctx);
 }
 
 void setupViewport(ViewerContext &context) {
@@ -225,13 +231,28 @@ GLuint linkProgram(GLuint vertexShader, GLuint fragmentShader) {
   return shaderProgram;
 }
 
-GLuint createShaderProgram(char const *vertexShaderSource,
-                           char const *fragmentShaderSource) {
+std::tuple<GLuint, GLuint, GLuint>
+createShaderProgram(char const *vertexShaderSource,
+                    char const *fragmentShaderSource) {
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   compileShader(vertexShader, vertexShaderSource, GL_VERTEX_SHADER);
 
   GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
   compileShader(fragmentShader, fragmentShaderSource, GL_FRAGMENT_SHADER);
 
-  return linkProgram(vertexShader, fragmentShader);
+  GLuint shaderProgram = linkProgram(vertexShader, fragmentShader);
+
+  return std::make_tuple(shaderProgram, vertexShader, fragmentShader);
+}
+
+void cleanupShaders(GLuint shaderProgram, std::vector<GLuint> const &shaders) {
+  if (glIsProgram(shaderProgram)) {
+    for (GLuint shader : shaders) {
+      if (glIsShader(shader)) {
+        glDetachShader(shaderProgram, shader);
+        glDeleteShader(shader);
+      }
+    }
+    glDeleteProgram(shaderProgram);
+  }
 }

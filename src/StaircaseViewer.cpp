@@ -63,12 +63,18 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
     std::cerr << "Failed to create canvas. Initialization aborted." << std::endl;
     return;
   }
-
   context->viewController->initWindow();
-  setupWebGLContext(context->canvasId);
+  context->webGLContext = setupWebGLContext(context->canvasId);
   context->viewController->initViewer();
 
-  context->shaderProgram = createShaderProgram(
+  context->pushMessage(MessageType::NextFrame); // kick off event loop
+  emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
+                                              context.get());
+
+  StaircaseViewer::ensureBackgroundWorker();
+}
+void StaircaseViewer::loadDefaultShaders(ViewerContext &context) {
+   auto [program, vertexShader, fragmentShader] = createShaderProgram(
       /*vertexShaderSource=*/
       "attribute vec3 position;"
       "void main() {"
@@ -81,16 +87,20 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
       "  gl_FragColor = color;"
       "}");
 
-  context->pushMessage(MessageType::NextFrame); // kick off event loop
-  emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VI, handleMessages,
-                                              context.get());
-
-  StaircaseViewer::ensureBackgroundWorker();
+  context.shaderProgram = program;
+  context.vertexShader = vertexShader;
+  context.fragmentShader = fragmentShader;
+}
+void StaircaseViewer::cleanupDefaultShaders(ViewerContext &context) {
+  cleanupShaders(context.shaderProgram,
+                 {context.vertexShader, context.fragmentShader});
 }
 
 EMSCRIPTEN_KEEPALIVE void StaircaseViewer::displaySplashScreen() {
+  loadDefaultShaders(*context);
   drawCheckerBoard(context->shaderProgram,
                    context->viewController->getWindowSize());
+  cleanupDefaultShaders(*context);
 }
 
 EMSCRIPTEN_KEEPALIVE std::string StaircaseViewer::getDemoStepFile() {
@@ -149,7 +159,16 @@ std::string StaircaseViewer::getStepFileContent() {
   return _stepFileContent;
 }
 
-StaircaseViewer::~StaircaseViewer() {}
+void StaircaseViewer::deleteViewer(StaircaseViewer* viewer) {
+  debugOut("StaircaseViewer::deleteViewer(" + viewer->context->containerId + ")");
+  delete viewer;
+}
+
+StaircaseViewer::~StaircaseViewer() {
+  debugOut("StaircaseViewer::~StaircaseViewer()");
+  cleanupDefaultShaders(*context);
+  cleanupWebGLContext(context->webGLContext);
+}
 
 int StaircaseViewer::createCanvas(std::string containerId,
                                    std::string canvasId) {
@@ -268,7 +287,7 @@ void StaircaseViewer::ensureBackgroundWorker() {
   }
 }
 
-void StaircaseViewer::pushBackground(const Staircase::Message& msg) {
+void StaircaseViewer::pushBackground(Staircase::Message const &msg) {
   std::unique_lock<std::mutex> lock(backgroundQueueMutex);
   backgroundQueue.push(msg);
   cv.notify_one();
@@ -322,18 +341,7 @@ void StaircaseViewer::handleMessages(void *arg) {
     case MessageType::DrawLoadingScreen: {
       clearCanvas(Colors::Platinum);
       if (context->viewController->shouldRender) {
-        context->shaderProgram = createShaderProgram(
-            /*vertexShaderSource=*/
-            "attribute vec3 position;"
-            "void main() {"
-            "  gl_Position  = vec4(position, 1.0);"
-            "}",
-            /*fragmentShaderSource=*/
-            "precision mediump float;"
-            "uniform vec4 color;"
-            "void main() {"
-            "  gl_FragColor = color;"
-            "}");
+        loadDefaultShaders(*context);
       }
       context->viewController->shouldRender = false;
 
@@ -342,6 +350,8 @@ void StaircaseViewer::handleMessages(void *arg) {
       if (context->showingSpinner) {
         schedNextFrameWith(MessageType::DrawLoadingScreen);
       } else {
+        cleanupShaders(context->shaderProgram,
+                       {context->vertexShader, context->fragmentShader});
         context->viewController->shouldRender = true;
         nextFrame = false;
       }
@@ -374,5 +384,6 @@ EMSCRIPTEN_BINDINGS(staircase) {
       .function("fitAllObjects", &StaircaseViewer::fitAllObjects)
       .function("removeAllObjects", &StaircaseViewer::removeAllObjects)
       .function("loadStepFile", &StaircaseViewer::loadStepFile)
-      .function("getContainerId", &StaircaseViewer::getContainerId);
+      .function("getContainerId", &StaircaseViewer::getContainerId)
+      .class_function("deleteViewer", &StaircaseViewer::deleteViewer, emscripten::allow_raw_pointers());
 }

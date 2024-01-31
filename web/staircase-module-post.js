@@ -87,5 +87,26 @@ if (typeof document !== "undefined") { // To avoid this code block in worker thr
 
         flushQueue();
 
+        window.Staircase.cleanUp = function() {
+            if (Staircase._viewers) {
+                for (let containerId in Staircase._viewers) {
+                    let viewer = window.Staircase._viewers[containerId];
+                    if (viewer) {
+                        try {
+                            module.StaircaseViewer.deleteViewer(viewer);
+                        }
+                        catch (e) {
+                            console.log(e)
+                        }
+
+                    }
+                }
+            }
+
+            window.Staircase.initialized = false;
+            window.Staircase = null;
+        }
+        window.Staircase.initialized = true;
+
     });
 }

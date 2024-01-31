@@ -49,6 +49,8 @@ public:
 
   bool showingSpinner = false;
   GLuint shaderProgram;
+  GLuint vertexShader;
+  GLuint fragmentShader;
   GLint canvasWidth = 0;
   GLint canvasHeight = 0;
   std::unique_ptr<StaircaseViewController> viewController;
@@ -93,6 +95,7 @@ public:
     }
   }
 
+  EMSCRIPTEN_WEBGL_CONTEXT_HANDLE webGLContext;
 private:
   Handle(V3d_View) view;
   std::queue<Staircase::Message> messageQueue;

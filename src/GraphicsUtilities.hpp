@@ -21,13 +21,15 @@ void drawCheckerBoard(GLuint shaderProgram, Graphic3d_Vec2i windowSize);
 
 void drawLoadingScreen(GLuint shaderProgram, SpinnerParams &spinnerParams);
 
-void setupWebGLContext(std::string const &canvasId);
-
+EMSCRIPTEN_WEBGL_CONTEXT_HANDLE setupWebGLContext(std::string const &canvasId);
+void cleanupWebGLContext(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE const &ctx);
+void cleanupShaders(GLuint shaderProgram, const std::vector<GLuint>& shaders);
 void setupViewport(ViewerContext &context);
 void compileShader(GLuint &shader, char const *source, GLenum type);
 
 GLuint linkProgram(GLuint vertexShader, GLuint fragmentShader);
 
-GLuint createShaderProgram(char const *vertexShaderSource,
-                           char const *fragmentShaderSource);
+std::tuple<GLuint, GLuint, GLuint>
+createShaderProgram(char const *vertexShaderSource,
+                    char const *fragmentShaderSource);
 #endif

@@ -26,6 +26,7 @@ public:
   static void pushBackground(const Staircase::Message& msg);
   static Staircase::Message popBackground();
 
+  static void deleteViewer(StaircaseViewer* viewer);
   int createCanvas(std::string containerId, std::string canvasId);
   void displaySplashScreen();
   std::string getDemoStepFile();
@@ -38,7 +39,8 @@ public:
 
   int loadStepFile(std::string const &stepFileContent);
   static void handleMessages(void *arg);
-
+  static void loadDefaultShaders(ViewerContext &context);
+  static void cleanupDefaultShaders(ViewerContext &context);
   static void* backgroundWorker(void *arg);
   void setStepFileContent(const std::string& content);
   std::string getStepFileContent();
