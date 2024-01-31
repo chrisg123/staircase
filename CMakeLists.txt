@@ -68,6 +68,7 @@ set(EMSCRIPTEN_FLAGS
     " --extern-post-js ${CMAKE_CURRENT_SOURCE_DIR}/web/staircase-module-post.js"
     " -sMODULARIZE"
     " -sEXPORT_NAME='createStaircaseModule'"
+    " -sTEXTDECODER=0"
 )
 
 if(DIST_BUILD)
