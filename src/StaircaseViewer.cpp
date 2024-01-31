@@ -53,6 +53,7 @@ StaircaseViewer::StaircaseViewer(std::string const &containerId) {
   }
 
   context = std::make_shared<ViewerContext>();
+  context->containerId = containerId;
   context->canvasId = "staircase-canvas-" + generate_uuid();
   debugOut("context->canvasId: " + context->canvasId);
 
@@ -228,6 +229,7 @@ int StaircaseViewer::createCanvas(std::string containerId,
 void *StaircaseViewer::_loadStepFile(void *arg) {
   auto viewer = static_cast<StaircaseViewer *>(arg);
   auto context = viewer->context;
+  debugOut("StaircaseViewer::_loadStepFile(): containerId='", context->containerId, "'");
 
   context->showingSpinner = true;
   context->pushMessage({MessageType::DrawLoadingScreen});
