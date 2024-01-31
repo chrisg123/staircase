@@ -158,8 +158,15 @@ bool StaircaseViewController::initViewer() {
   view->SetWindow(aWindow);
 
   aisContext = new AIS_InteractiveContext(aViewer);
-  initPixelScaleRatio();
 
+  if (viewCube.IsNull()) {
+    initScene();
+  } else {
+    initPixelScaleRatio();
+  }
+
+  setCanLoadNewFile(true);
+  shouldRender = true;
   return true;
 }
 
