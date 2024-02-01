@@ -18,20 +18,28 @@ if (typeof document !== "undefined") { // To avoid this code block in worker thr
     createStaircaseModule(moduleArg).then(function (module) {
         window.Staircase = window.Staircase || {};
         window.Staircase._queue = window.Staircase._queue || [];
-        window.Staircase._viewers = window.Staircase._viewers || {};
+        window.Staircase._viewers = window.Staircase._viewers || new Map();
+        window.Staircase._observers = window.Staircase._observers || new Map();
         window.Staircase._containerIds = window.Staircase._containerIds || new Set();
 
         let ensureViewerCreated = function(containerId) {
-            if (!window.Staircase._viewers[containerId]) {
+            if (!window.Staircase._viewers.has(containerId)) {
                 let viewer = new module.StaircaseViewer(containerId);
-                window.Staircase._viewers[containerId] = viewer;
+                window.Staircase._viewers.set(containerId, viewer);
                 return viewer;
             }
-            return window.Staircase._viewers[containerId];
+            return window.Staircase._viewers.get(containerId);
         };
 
         let enqueueAll = function(items) {
+            let queuedContainerIds = new Set(window.Staircase._queue.map(item => item.containerId));
+
             for (let item of items) {
+                if (queuedContainerIds.has(item.containerId)) {
+                    window.Staircase._queue = window.Staircase._queue
+                        .filter(queueItem => queueItem.containerId !== item.containerId);
+                    queuedContainerIds.delete(item.containerId);
+                }
                 window.Staircase._queue.push(item)
             }
         }
@@ -51,6 +59,10 @@ if (typeof document !== "undefined") { // To avoid this code block in worker thr
                     console.error("Container with id '" + containerId +
                                   "' not found.");
                     continue;
+                }
+
+                if (window.Staircase._observers.has(containerId)) {
+                    window.Staircase._observers.get(containerId).disconnect();
                 }
 
                 let resizeObserver = new ResizeObserver(entries => {
@@ -88,20 +100,20 @@ if (typeof document !== "undefined") { // To avoid this code block in worker thr
         flushQueue();
 
         window.Staircase.cleanUp = function() {
-            if (Staircase._viewers) {
-                for (let containerId in Staircase._viewers) {
-                    let viewer = window.Staircase._viewers[containerId];
-                    if (viewer) {
-                        try {
-                            module.StaircaseViewer.deleteViewer(viewer);
-                        }
-                        catch (e) {
-                            console.log(e)
-                        }
 
+            for (let [containerId, viewer] of Staircase._viewers) {
+                if (viewer) {
+                    try {
+                        module.StaircaseViewer.deleteViewer(viewer);
+                    }
+                    catch (e) {
+                        console.log(e)
                     }
                 }
             }
+            window.Staircase._viewers.clear();
+            window.Staircase._observers.forEach(x => x.disconnect());
+            window.Staircase._observers.clear();
 
             window.Staircase.initialized = false;
             window.Staircase = null;
